@@ -44,12 +44,12 @@
             </div>
             
             <div class="footer-col">
-              <h4>Resources</h4>
-              <a href="#" class="footer-link" id="exportWheelLink">💾 Export Wheel Data</a>
-              <a href="#" class="footer-link" id="importWheelLink">📂 Import Wheel Data</a>
-              <a href="#" class="footer-link" id="resetWheelLink">🔄 Reset to Default</a>
-              <a href="#" class="footer-link" id="clearStorageLink">🗑 Clear All Data</a>
-              <a href="#" class="footer-link" id="shareWheelLink">📤 Share This Wheel</a>
+              <h4>Pages</h4>
+              <a href="about" class="footer-link">About</a>
+              <a href="contact" class="footer-link">Contact</a>
+              <a href="privacy" class="footer-link">Privacy Policy</a>
+              <a href="terms" class="footer-link">Terms of Use</a>
+              <a href="cookies" class="footer-link">Cookies Policy</a>
             </div>
           </div>
           
