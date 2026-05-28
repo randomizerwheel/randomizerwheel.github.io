@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About Parker Levitte – Web Developer & SEO Expert</title>
+  <meta name="description" content="Meet Parker Levitte, the web developer and SEO expert behind RandomizerWheel. Discover the story, technology, and vision behind the ultimate random wheel spinner." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://randomizerwheel.github.io/about.html" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght=400;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/style.css" />
+  
+  <style>
+    .about-section {
+      padding: 80px 0;
+      background: linear-gradient(180deg, #f8f2ff 0%, #fff9f0 100%);
+    }
+    .about-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 45px;
+      border: 2px solid var(--border);
+      margin-bottom: 40px;
+    }
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 30px;
+    }
+    .about-text h2 {
+      font-family: var(--font-head);
+      color: var(--dark);
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+    }
+    .about-text p {
+      color: var(--text-light);
+      margin-bottom: 20px;
+      line-height: 1.8;
+      font-size: 1.05rem;
+    }
+    .profile-badge {
+      display: inline-block;
+      background: rgba(255,87,51,0.1);
+      color: var(--primary);
+      padding: 6px 16px;
+      border-radius: 50px;
+      font-weight: 800;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .vision-box {
+      background: #f9f6ff;
+      border-left: 4px solid var(--accent);
+      padding: 20px;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: 30px 0;
+    }
+    .vision-box p {
+      margin-bottom: 0;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header injected by header.js -->
+  <div id="site-header"></div>
+
+  <main>
+    <section class="about-section">
+      <div class="container">
+        <h1 class="section-title">About <span class="gradient-text">The Creator</span></h1>
+        <p class="section-sub">Discover the drive, technical expertise, and vision powering RandomizerWheel.</p>
+        
+        <div class="about-card">
+          <div class="about-grid">
+            <div class="about-text">
+              <span class="profile-badge">Developer Profile</span>
+              <h2>Hi, I'm Parker Levitte 👋</h2>
+              <p>I am a professional <strong>web developer and SEO expert</strong> dedicated to engineering fast, ultra-responsive, and highly engaging web-based utility applications. With a specialized focus on combining sleek interactive interfaces with high-performance search optimization, my mission is to build digital tools that solve everyday dilemmas instantly, seamlessly, and completely free of charge.</p>
+              
+              <p><strong>RandomizerWheel</strong> was born out of a desire to streamline decision-making. Whether settling a friendly debate over what to eat for dinner, rotating classroom roles fairly for students, or organizing live engagement giveaways for content creators, I engineered this platform to deliver zero-friction, completely unbiased random selections with a satisfying user experience.</p>
+              
+              <div class="vision-box">
+                <p class="gradient-text" style="font-family: var(--font-head); font-size: 1.2rem; font-style: normal; margin-bottom: 5px;">The Technical Vision</p>
+                <p>Every line of code powering our random wheel picker is optimized for speed, cross-device responsiveness, and browser native data security. By utilizing localized internal storage directly inside your client device, your information stays yours—guaranteeing lightning-fast load times and authentic data privacy.</p>
+              </div>
+
+              <h2>Why Choose Our Tools?</h2>
+              <p>As an SEO and web development specialist, I carefully audit every metric, from Core Web Vitals to layout render thresholds. This platform is constructed from the ground up to guarantee a clean, intuitive interface that remains completely accessible across mobile phones, tablets, and desktop configurations alike.</p>
+              
+              <div style="text-align: center; margin-top: 40px;">
+                <a href="index.html#wheel-app" class="btn btn-primary btn-lg pulse-btn">🎡 Back To Spinner Wheel</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer injected by footer.js -->
+  <div id="site-footer"></div>
+
+  <!-- Scripts -->
+  <script src="components/header.js"></script>
+  <script src="components/footer.js"></script>
+</body>
+</html>
