@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spin The Wheel – Free Random Wheel Spinner & Picker | RandomizerWheel</title>
+  <meta name="description" content="Spin the wheel for free! Custom random wheel spinner and picker for giveaways, decisions, classrooms, and games. Create your own spinner wheel in seconds. No login needed." />
+  <meta name="keywords" content="spin the wheel, wheel spinner, spin wheel, spinner wheel, spin the wheel custom, random picker, random wheel, spinning wheel, spin a wheel, random wheel spinner, wheel picker, picker wheel, random wheel generator, free spin wheel" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://randomizerwheel.github.io/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Spin The Wheel – Free Random Wheel Spinner" />
+  <meta property="og:description" content="Create custom spin wheels instantly. Free random picker for games, giveaways, classrooms & more." />
+  <meta property="og:url" content="https://randomizerwheel.github.io/" />
+  <meta property="og:image" content="https://randomizerwheel.github.io/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Schema Markup -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "RandomizerWheel",
+    "url": "https://randomizerwheel.github.io/",
+    "description": "Free spin the wheel random picker and wheel spinner. Create custom spinning wheels for decisions, games, giveaways and classrooms.",
+    "applicationCategory": "UtilityApplication",
+    "operatingSystem": "Any",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "featureList": [
+      "Custom wheel creation",
+      "Multiple wheel types",
+      "Random wheel generator",
+      "Wheel spinner with animations",
+      "Free to use, no account required"
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is RandomizerWheel free?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes! RandomizerWheel is completely free to use. No sign-up, no subscription required." }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I need an account to spin the wheel?",
+        "acceptedAnswer": { "@type": "Answer", "text": "No account needed. Your wheel saves automatically in your browser. Just visit and start spinning." }
+      },
+      {
+        "@type": "Question",
+        "name": "Is the wheel actually random?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes. We use a cryptographically-seeded random algorithm ensuring every spin is truly fair and unbiased." }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I create a custom wheel?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Absolutely! Add your own items, change colors, adjust weights, and save your custom wheel for reuse." }
+      }
+    ]
+  }
+  </script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Header injected by JS -->
+  <div id="header-root"></div>
+
+  <!-- HERO -->
+  <section class="hero" id="home">
+    <div class="hero-bg">
+      <div class="orb orb1"></div>
+      <div class="orb orb2"></div>
+      <div class="orb orb3"></div>
+      <div class="confetti-container" id="confettiContainer"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-text">
+        <span class="hero-badge">🎯 Free &amp; Instant</span>
+        <h1>Spin The Wheel<br><span class="gradient-text">Make Any Decision Fun</span></h1>
+        <p>The ultimate <strong>random wheel spinner</strong> for giveaways, classrooms, games, and decisions. Add your items and let the <strong>wheel picker</strong> decide!</p>
+        <div class="hero-cta">
+          <a href="#spinner" class="btn btn-primary">🎰 Spin Now – It's Free</a>
+          <a href="#wheel-types" class="btn btn-ghost">Explore Wheel Types</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat"><span class="stat-num">500K+</span><span>Monthly Spins</span></div>
+          <div class="stat"><span class="stat-num">50+</span><span>Wheel Types</span></div>
+          <div class="stat"><span class="stat-num">100%</span><span>Free Forever</span></div>
+        </div>
+      </div>
+      <div class="hero-wheel-demo">
+        <div class="wheel-glow"></div>
+        <canvas id="heroWheel" width="380" height="380"></canvas>
+        <button class="spin-center-btn" id="heroSpinBtn" aria-label="Spin the wheel">
+          <span>SPIN</span>
+        </button>
+        <div class="wheel-pointer" aria-hidden="true">▼</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHEEL RESULT MODAL -->
+  <div class="result-modal" id="resultModal" role="dialog" aria-modal="true" aria-labelledby="resultText">
+    <div class="result-modal-inner">
+      <div class="result-emoji">🎉</div>
+      <div class="result-label">Winner!</div>
+      <div class="result-text" id="resultText">Pizza</div>
+      <button class="btn btn-primary" id="spinAgainBtn">Spin Again</button>
+      <button class="result-close" id="closeModal" aria-label="Close">✕</button>
+    </div>
+  </div>
+
+  <!-- FULL SPINNER SECTION -->
+  <section class="spinner-section" id="spinner">
+    <div class="container">
+      <div class="section-header">
+        <h2>Your Custom <span class="gradient-text">Spin The Wheel</span></h2>
+        <p>Add your items below, customize colors, and spin your personalized random wheel spinner</p>
+      </div>
+      <div class="spinner-layout">
+        <div class="spinner-controls">
+          <div class="control-card">
+            <h3>⚙️ Wheel Items</h3>
+            <textarea id="itemsInput" rows="10" placeholder="Enter items, one per line&#10;e.g.&#10;Pizza&#10;Tacos&#10;Burgers&#10;Sushi"></textarea>
+            <div class="control-actions">
+              <button class="btn btn-primary" id="buildWheelBtn">🔨 Build Wheel</button>
+              <button class="btn btn-outline" id="shuffleItemsBtn">🔀 Shuffle</button>
+              <button class="btn btn-outline" id="clearItemsBtn">🗑 Clear</button>
+            </div>
+          </div>
+          <div class="control-card">
+            <h3>🎨 Style</h3>
+            <div class="style-options">
+              <label>Color Theme</label>
+              <div class="theme-swatches" id="themeSwatches">
+                <button class="swatch active" data-theme="vivid" title="Vivid"><span></span></button>
+                <button class="swatch" data-theme="neon" title="Neon"><span></span></button>
+                <button class="swatch" data-theme="pastel" title="Pastel"><span></span></button>
+                <button class="swatch" data-theme="dark" title="Dark"><span></span></button>
+                <button class="swatch" data-theme="sunset" title="Sunset"><span></span></button>
+                <button class="swatch" data-theme="ocean" title="Ocean"><span></span></button>
+              </div>
+              <label>Font Size</label>
+              <input type="range" id="fontSizeRange" min="9" max="20" value="13" class="range-input" />
+              <label>Remove Winner After Spin</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="removeWinner" />
+                <span class="toggle-slider"></span>
+              </label>
+              <label>Show Confetti</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="showConfetti" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="control-card">
+            <h3>📋 Spin History</h3>
+            <ul class="spin-history" id="spinHistory"><li class="history-empty">No spins yet</li></ul>
+            <button class="btn btn-outline btn-sm" id="clearHistory">Clear History</button>
+          </div>
+        </div>
+        <div class="spinner-stage">
+          <div class="stage-wheel-wrap">
+            <div class="stage-glow"></div>
+            <canvas id="mainWheel" width="480" height="480"></canvas>
+            <button class="spin-center-btn large" id="mainSpinBtn" aria-label="Spin the wheel">
+              <span>SPIN</span>
+            </button>
+            <div class="wheel-pointer large" aria-hidden="true">▼</div>
+          </div>
+          <button class="btn btn-primary btn-spin-big" id="mainSpinBtnBottom">🎰 Spin The Wheel!</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHEEL TYPES -->
+  <section class="wheel-types-section" id="wheel-types">
+    <div class="container">
+      <div class="section-header">
+        <h2>Explore <span class="gradient-text">Wheel Types</span></h2>
+        <p>Pick a ready-made wheel or build your own custom <strong>random wheel generator</strong></p>
+      </div>
+      <div class="wheel-types-grid" id="wheelTypesGrid"></div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-section" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <h2>How The <span class="gradient-text">Wheel Spinner</span> Works</h2>
+        <p>From zero to spinning in three simple steps</p>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">01</div>
+          <div class="step-icon">✏️</div>
+          <h3>Add Your Items</h3>
+          <p>Type in names, options, foods, tasks — anything you want the <strong>wheel picker</strong> to choose from. One item per line.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">02</div>
+          <div class="step-icon">🎨</div>
+          <h3>Customize Your Wheel</h3>
+          <p>Pick a color theme for your <strong>spinning wheel</strong>, adjust font sizes, and toggle options like remove-winner mode.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">03</div>
+          <div class="step-icon">🎰</div>
+          <h3>Spin &amp; Decide</h3>
+          <p>Hit Spin and watch the <strong>random wheel spinner</strong> fly. A winner is revealed with confetti and celebration!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE CASES -->
+  <section class="usecases-section" id="use-cases">
+    <div class="container">
+      <div class="section-header">
+        <h2>What People Use <span class="gradient-text">Spin The Wheel</span> For</h2>
+        <p>Over 500,000 spins every month across every imaginable use case</p>
+      </div>
+      <div class="usecases-grid">
+        <div class="usecase-card">
+          <div class="usecase-icon">🏫</div>
+          <h3>Classrooms</h3>
+          <p>Teachers use the <strong>random wheel</strong> to call on students, assign groups, pick topics, and make lessons interactive and fair.</p>
+        </div>
+        <div class="usecase-card">
+          <div class="usecase-icon">🎁</div>
+          <h3>Giveaways</h3>
+          <p>Streamers and brands run live <strong>spin-the-wheel giveaways</strong> on Twitch and YouTube using our transparent random picker.</p>
+        </div>
+        <div class="usecase-card">
+          <div class="usecase-icon">🍕</div>
+          <h3>Food Decisions</h3>
+          <p>Can't decide where to eat? Let the <strong>spinner wheel</strong> settle the "where should we eat?" debate once and for all.</p>
+        </div>
+        <div class="usecase-card">
+          <div class="usecase-icon">👥</div>
+          <h3>Team Tasks</h3>
+          <p>Managers use the <strong>wheel spinner</strong> to assign tasks, pick presenters, and distribute responsibilities fairly.</p>
+        </div>
+        <div class="usecase-card">
+          <div class="usecase-icon">🎮</div>
+          <h3>Games &amp; Fun</h3>
+          <p>Add dares, challenges, or trivia topics to your <strong>spin wheel</strong> for game nights, parties, and icebreakers.</p>
+        </div>
+        <div class="usecase-card">
+          <div class="usecase-icon">🏠</div>
+          <h3>Chores &amp; Home</h3>
+          <p>Parents use our <strong>random wheel generator</strong> to rotate household chores among family members — no more arguments!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features-section" id="features">
+    <div class="container">
+      <div class="features-layout">
+        <div class="features-text">
+          <h2>Packed With <span class="gradient-text">Powerful Features</span></h2>
+          <p>The most advanced free <strong>spin the wheel</strong> app on the web. Everything you need for a perfect random picker experience.</p>
+          <ul class="features-list">
+            <li><span class="feat-icon">🎯</span><div><strong>Truly Random</strong><br>Cryptographic randomness — every <strong>wheel spin</strong> is provably fair.</div></li>
+            <li><span class="feat-icon">🎨</span><div><strong>6 Color Themes</strong><br>Vivid, Neon, Pastel, Dark, Sunset, Ocean themes for your <strong>spinning wheel</strong>.</div></li>
+            <li><span class="feat-icon">📱</span><div><strong>Mobile Ready</strong><br>Touch-optimized responsive <strong>spin wheel</strong> works on every device.</div></li>
+            <li><span class="feat-icon">💾</span><div><strong>Auto-Save</strong><br>Your <strong>custom wheel</strong> saves in the browser — no account needed.</div></li>
+            <li><span class="feat-icon">🔇</span><div><strong>Remove Winner Mode</strong><br>Automatically remove the winning slice after each <strong>random wheel spinner</strong> pick.</div></li>
+            <li><span class="feat-icon">🏆</span><div><strong>Spin History</strong><br>Track all results with a full log of every <strong>wheel picker</strong> decision.</div></li>
+            <li><span class="feat-icon">🔗</span><div><strong>Shareable Wheels</strong><br>Copy a link to share your <strong>spin the wheel custom</strong> setup with anyone.</div></li>
+            <li><span class="feat-icon">⚡</span><div><strong>Instant Load</strong><br>Zero wait. The <strong>free spin wheel</strong> is ready the moment you arrive.</div></li>
+          </ul>
+        </div>
+        <div class="features-visual">
+          <div class="feature-showcase" id="featureShowcase">
+            <canvas id="featureWheel" width="320" height="320"></canvas>
+            <button class="spin-center-btn" id="featureSpinBtn"><span>SPIN</span></button>
+            <div class="wheel-pointer" aria-hidden="true">▼</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KEYWORDS / SEO SECTION -->
+  <section class="seo-section" id="about">
+    <div class="container">
+      <div class="section-header">
+        <h2>The Best Free <span class="gradient-text">Spin The Wheel</span> App</h2>
+        <p>Everything you need to know about our random wheel spinner</p>
+      </div>
+      <div class="seo-grid">
+        <div class="seo-card">
+          <h3>🎰 Spin The Wheel – Random Picker</h3>
+          <p>RandomizerWheel is the web's most popular <strong>spin the wheel random picker</strong>. Enter any list of items, hit spin, and let chance decide. Perfect for any situation where a fair, random choice is needed — from picking a movie to selecting raffle winners.</p>
+        </div>
+        <div class="seo-card">
+          <h3>🌀 Custom Wheel Spinner</h3>
+          <p>Our <strong>spin the wheel custom</strong> builder lets you create a personalized <strong>wheel spinner</strong> in seconds. Add unlimited items, assign colors, and save your wheel. The custom <strong>spinner wheel</strong> remembers your settings across sessions.</p>
+        </div>
+        <div class="seo-card">
+          <h3>🎡 Random Wheel Generator</h3>
+          <p>Need a <strong>random wheel generator</strong> for teaching or training? Our tool supports classroom name pickers, yes/no spinners, number wheels, and alphabet wheels. Generate any wheel you need with our flexible <strong>wheel picker</strong> builder.</p>
+        </div>
+        <div class="seo-card">
+          <h3>📱 Spin A Wheel – Anywhere</h3>
+          <p>Whether you're on desktop, tablet, or phone, you can <strong>spin a wheel</strong> instantly. Our responsive <strong>spinning wheel</strong> is optimized for touch and mouse. No app download required — just visit and spin the <strong>free spin wheel</strong> anytime.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq-section" id="faq">
+    <div class="container">
+      <div class="section-header">
+        <h2>Frequently Asked <span class="gradient-text">Questions</span></h2>
+        <p>Everything about our random wheel spinner, answered</p>
+      </div>
+      <div class="faq-list" id="faqList"></div>
+    </div>
+  </section>
+
+  <!-- CTA BANNER -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-inner">
+        <div class="cta-orb1"></div>
+        <div class="cta-orb2"></div>
+        <h2>Ready to Spin?</h2>
+        <p>Join 500,000+ people who use RandomizerWheel every month to make decisions fun. <strong>No account. No download. 100% free.</strong></p>
+        <a href="#spinner" class="btn btn-white btn-xl">🎰 Spin The Wheel Now</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer injected by JS -->
+  <div id="footer-root"></div>
+
+  <script src="components/header.js"></script>
+  <script src="components/footer.js"></script>
+  <script src="js/wheel.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
