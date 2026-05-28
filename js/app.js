@@ -681,6 +681,40 @@ window.addEventListener('DOMContentLoaded', () => {
       showToast("Shared wheel loaded!");
     } catch(e) { console.warn(e); }
   }
+
+  // =============================================
+// FAQ ACCORDION FIX
+// =============================================
+function initFaqAccordion() {
+  const faqButtons = document.querySelectorAll('.faq-q');
+  
+  faqButtons.forEach(button => {
+    // Remove any existing listeners to avoid duplicates
+    button.removeEventListener('click', button.faqHandler);
+    
+    // Create handler function
+    button.faqHandler = function() {
+      // Toggle active class on button
+      this.classList.toggle('active');
+      
+      // Find and toggle the answer
+      const answer = this.nextElementSibling;
+      if (answer) {
+        answer.classList.toggle('open');
+      }
+    };
+    
+    // Add click listener
+    button.addEventListener('click', button.faqHandler);
+  });
+}
+
+// Initialize FAQ when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initFaqAccordion);
+} else {
+  initFaqAccordion();
+}
   
   // Resize handler
   window.addEventListener('resize', () => {
