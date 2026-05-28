@@ -534,18 +534,20 @@ window.spinWheel = spinWheelAdvanced;
 // Initialize wheel-specific features
 function initWheel() {
   resizeWheel();
-  startHeroAnimation();
+  
+  // Small delay to ensure canvas is ready
+  setTimeout(() => {
+    if (wheelApp.heroCtx && wheelApp.heroCanvas) {
+      startHeroAnimation();
+    }
+  }, 100);
+  
   initWheelShortcuts();
   
-  // Add resize listener
-  window.addEventListener('resize', () => {
-    resizeWheel();
+  // Also start animation on window focus (in case it stops)
+  window.addEventListener('focus', () => {
+    if (!heroSpinAnimation && wheelApp.heroCtx && wheelApp.heroCanvas) {
+      startHeroAnimation();
+    }
   });
-}
-
-// Call this when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initWheel);
-} else {
-  initWheel();
 }
