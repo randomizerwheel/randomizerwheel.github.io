@@ -618,6 +618,28 @@ function escapeHtml(str) {
   });
 }
 
+// Make hero spin button scroll to main wheel app
+const heroSpinBtn = document.getElementById('heroSpinBtn');
+if (heroSpinBtn) {
+  heroSpinBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const wheelAppSection = document.getElementById('wheel-app');
+    if (wheelAppSection) {
+      wheelAppSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+    // Optional: Auto-trigger the main spin after scrolling
+    setTimeout(() => {
+      const mainSpinBtn = document.getElementById('mainSpinBtn');
+      if (mainSpinBtn) {
+        mainSpinBtn.click();
+      }
+    }, 500);
+  });
+}
+
 // Initialize on load
 window.addEventListener('DOMContentLoaded', () => {
   // Set up canvas references
