@@ -1,728 +1,675 @@
-// ===== SPIN THE WHEEL APP.JS =====
-// Complete implementation of the random wheel spinner with all interactive features
+// app.js - Main application logic for RandomizerWheel
 
-// ===== DOM ELEMENTS =====
-const mainCanvas = document.getElementById('mainWheel');
-const heroCanvas = document.getElementById('heroWheel');
-const featureCanvas = document.getElementById('featureWheel');
-const itemsTextarea = document.getElementById('itemsInput');
-const buildWheelBtn = document.getElementById('buildWheelBtn');
-const shuffleItemsBtn = document.getElementById('shuffleItemsBtn');
-const clearItemsBtn = document.getElementById('clearItemsBtn');
-const mainSpinBtn = document.getElementById('mainSpinBtn');
-const mainSpinBtnBottom = document.getElementById('mainSpinBtnBottom');
-const heroSpinBtn = document.getElementById('heroSpinBtn');
-const featureSpinBtn = document.getElementById('featureSpinBtn');
-const fontSizeRange = document.getElementById('fontSizeRange');
-const removeWinnerCheckbox = document.getElementById('removeWinner');
-const showConfettiCheckbox = document.getElementById('showConfetti');
-const clearHistoryBtn = document.getElementById('clearHistory');
-const spinHistoryList = document.getElementById('spinHistory');
-const resultModal = document.getElementById('resultModal');
-const resultText = document.getElementById('resultText');
-const spinAgainBtn = document.getElementById('spinAgainBtn');
-const closeModalBtn = document.getElementById('closeModal');
-const wheelTypesGrid = document.getElementById('wheelTypesGrid');
-const faqList = document.getElementById('faqList');
-const themeSwatches = document.querySelectorAll('.swatch');
-const headerRoot = document.getElementById('header-root');
-const footerRoot = document.getElementById('footer-root');
-
-// ===== GLOBAL STATE =====
-let mainWheel = null;
-let heroWheel = null;
-let featureWheel = null;
-
-let mainSegments = [];
-let heroSegments = [];
-let featureSegments = [];
-
-let currentTheme = 'vivid';
-let fontSize = 13;
-let removeWinnerMode = false;
-let showConfetti = true;
-let spinHistory = [];
-
-let isSpinning = false;
-let animationFrame = null;
-let spinStartTime = 0;
-let spinDuration = 2000; // ms
-let spinTargetSegment = 0;
-let spinCurrentRotation = 0;
-let spinStartRotation = 0;
-let spinEasing = null;
-
-// ===== COLOR THEMES =====
-const colorThemes = {
-  vivid: [
-    '#FF4D6D', '#FFB703', '#06D6A0', '#FF8C42', '#8338EC', '#3A86FF',
-    '#E63946', '#F4A261', '#2A9D8F', '#9C89B8', '#EF476F', '#FFD166'
-  ],
-  neon: [
-    '#FF00FF', '#00FFFF', '#AAFF00', '#FF6600', '#FF0099', '#00FFAA',
-    '#FF3366', '#33FFCC', '#FFCC00', '#9933FF', '#00FF66', '#FF9933'
-  ],
-  pastel: [
-    '#FFB3C1', '#FFD6A5', '#CAFFBF', '#BDE0FE', '#E4C1F9', '#FDE2C4',
-    '#C5D3E8', '#FFC8DD', '#B5EAD7', '#C7E9FB', '#D4A5A5', '#FAD2E1'
-  ],
-  dark: [
-    '#2D2D2D', '#555555', '#888888', '#AAAAAA', '#3A3A3A', '#666666',
-    '#1E1E1E', '#4A4A4A', '#777777', '#999999', '#2F2F2F', '#5E5E5E'
-  ],
-  sunset: [
-    '#F72585', '#FF8C00', '#FFD60A', '#B5179E', '#FF5C8A', '#FFB347',
-    '#E63946', '#F4A261', '#9C27B0', '#FF6D00', '#FB8B67', '#F9C74F'
-  ],
-  ocean: [
-    '#0077B6', '#00B4D8', '#48CAE4', '#90E0EF', '#03045E', '#023E8A',
-    '#0096C7', '#35A7FF', '#4EA8DE', '#56CFE1', '#1A759F', '#34A0A4'
-  ]
+// =============================================
+// GLOBAL STATE
+// =============================================
+let wheelApp = {
+  // Wheel data
+  segments: ["Pizza 🍕", "Tacos 🌮", "Sushi 🍣", "Burger 🍔", "Salad 🥗", "Pasta 🍝", "Ice Cream 🍦", "Coffee ☕"],
+  colors: [], // Will be generated based on theme
+  currentTheme: "rainbow",
+  spinning: false,
+  
+  // Settings
+  soundEnabled: true,
+  confettiEnabled: true,
+  removeWinner: false,
+  
+  // History
+  history: [],
+  
+  // DOM Elements
+  canvas: null,
+  ctx: null,
+  heroCanvas: null,
+  heroCtx: null,
+  
+  // Audio
+  spinSound: null,
+  tickSound: null,
+  cheerSound: null,
+  
+  // Animation frame
+  animationId: null,
+  spinAngle: 0,
+  spinStartTime: 0,
+  spinDuration: 2000,
+  spinTargetSegment: 0,
+  spinCallback: null,
+  
+  // Current preset (to avoid duplicate loading)
+  currentPresetType: "custom"
 };
 
-// ===== HELPER FUNCTIONS =====
-function getThemeColors(theme, count) {
-  const themeColors = colorThemes[theme] || colorThemes.vivid;
-  const colors = [];
-  for (let i = 0; i < count; i++) {
-    colors.push(themeColors[i % themeColors.length]);
+// =============================================
+// COLOR THEMES
+// =============================================
+const THEMES = {
+  rainbow: ["#FF595E", "#FFCA3A", "#8AC926", "#1982C4", "#6A4C93", "#FF6D00", "#42CAFD", "#FFB347"],
+  ocean: ["#003B5C", "#006A8E", "#0096C7", "#48CAE4", "#90E0EF", "#ADE8F4", "#CAF0F8", "#005F73"],
+  fire: ["#800000", "#A52A2A", "#CD5C5C", "#F08080", "#FA8072", "#E97451", "#D35400", "#FF4500"],
+  forest: ["#1B4332", "#2D6A4F", "#40916C", "#52B788", "#74C69D", "#95D5B2", "#B7E4C7", "#D8F3DC"],
+  candy: ["#FF69B4", "#FF1493", "#DB7093", "#FFB6C1", "#FFC0CB", "#FF85B3", "#FDA7DF", "#F8C7E5"],
+  night: ["#1A1025", "#2D1B4E", "#4A2B7A", "#6C3F9E", "#8E5BC2", "#B07FE6", "#D2A8FF", "#F4E8FF"],
+  gold: ["#D4AF37", "#FFDF00", "#CFB53B", "#F9F3A5", "#F4D03F", "#F39C12", "#E67E22", "#D35400"],
+  pastel: ["#FFB3BA", "#FFDFBA", "#FFFFBA", "#BAFFC9", "#BAE1FF", "#D4B8FF", "#FFC8DD", "#C0E0FF"],
+  neon: ["#FF00FF", "#00FFFF", "#39FF14", "#FFFF00", "#FF6D00", "#FF006E", "#8338EC", "#3A86FF"]
+};
+
+// =============================================
+// UTILITY FUNCTIONS
+// =============================================
+function showToast(message, duration = 3000) {
+  let toast = document.querySelector('.toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.className = 'toast';
+    document.body.appendChild(toast);
   }
-  return colors;
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), duration);
 }
 
-function formatDate() {
-  const now = new Date();
-  return `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
-}
+function showConfetti() {
+  if (!wheelApp.confettiEnabled) return;
+  const canvas = document.getElementById('confettiCanvas');
+  if (!canvas) return;
+  canvas.style.display = 'block';
+  const duration = 2000;
+  const animationEnd = Date.now() + duration;
+  const defaults = { startVelocity: 20, spread: 360, ticks: 60, zIndex: 10000, origin: { y: 0.6 } };
 
-function addToHistory(item) {
-  spinHistory.unshift({ item, timestamp: formatDate() });
-  if (spinHistory.length > 20) spinHistory.pop();
-  updateHistoryUI();
-}
-
-function updateHistoryUI() {
-  if (!spinHistoryList) return;
-  if (spinHistory.length === 0) {
-    spinHistoryList.innerHTML = '<li class="history-empty">No spins yet</li>';
-    return;
+  function randomInRange(min, max) {
+    return Math.random() * (max - min) + min;
   }
-  spinHistoryList.innerHTML = spinHistory.map(entry => `
-    <li>
-      <span class="history-badge">🎲</span>
-      <span><strong>${escapeHtml(entry.item)}</strong> - ${entry.timestamp}</span>
-    </li>
-  `).join('');
+
+  const interval = setInterval(() => {
+    const timeLeft = animationEnd - Date.now();
+    if (timeLeft <= 0) {
+      clearInterval(interval);
+      canvas.style.display = 'none';
+      return;
+    }
+    const particleCount = 50 * (timeLeft / duration);
+    confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.9), y: Math.random() - 0.2 } });
+  }, 250);
 }
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-// Save to localStorage
-function saveToLocalStorage() {
-  const data = {
-    items: mainSegments.map(s => s.text),
-    theme: currentTheme,
-    fontSize: fontSize,
-    removeWinnerMode: removeWinnerMode,
-    showConfetti: showConfetti,
-    spinHistory: spinHistory
-  };
-  localStorage.setItem('spinWheelData', JSON.stringify(data));
-}
-
-function loadFromLocalStorage() {
-  const saved = localStorage.getItem('spinWheelData');
-  if (!saved) return;
+function playSound(soundName) {
+  if (!wheelApp.soundEnabled) return;
   try {
-    const data = JSON.parse(saved);
-    if (data.items && data.items.length) {
-      itemsTextarea.value = data.items.join('\n');
-      mainSegments = data.items.map((text, idx) => ({ text, weight: 1 }));
+    // Create audio context on first user interaction
+    if (!window.audioContext) {
+      window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
     }
-    if (data.theme) {
-      currentTheme = data.theme;
-      updateThemeSwatchActive(currentTheme);
+    // Simple beep/spin sound using oscillator for better compatibility
+    if (soundName === 'spin') {
+      const osc = window.audioContext.createOscillator();
+      const gain = window.audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(window.audioContext.destination);
+      osc.frequency.value = 880;
+      gain.gain.value = 0.15;
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.00001, window.audioContext.currentTime + 0.3);
+      osc.stop(window.audioContext.currentTime + 0.3);
+    } else if (soundName === 'cheer') {
+      const osc = window.audioContext.createOscillator();
+      const gain = window.audioContext.createGain();
+      osc.connect(gain);
+      gain.connect(window.audioContext.destination);
+      osc.type = 'sine';
+      osc.frequency.value = 523.25;
+      gain.gain.value = 0.2;
+      osc.start();
+      setTimeout(() => { osc.frequency.value = 659.25; }, 80);
+      setTimeout(() => { osc.frequency.value = 783.99; }, 160);
+      setTimeout(() => { gain.gain.exponentialRampToValueAtTime(0.00001, window.audioContext.currentTime + 0.3); }, 200);
+      setTimeout(() => osc.stop(), 500);
     }
-    if (data.fontSize) fontSize = data.fontSize;
-    if (data.removeWinnerMode !== undefined) removeWinnerMode = data.removeWinnerMode;
-    if (data.showConfetti !== undefined) showConfetti = data.showConfetti;
-    if (data.spinHistory) spinHistory = data.spinHistory;
-    
-    fontSizeRange.value = fontSize;
-    removeWinnerCheckbox.checked = removeWinnerMode;
-    showConfettiCheckbox.checked = showConfetti;
-    updateHistoryUI();
-  } catch(e) { console.warn(e); }
+  } catch(e) { console.log('Audio error:', e); }
 }
 
-function updateThemeSwatchActive(theme) {
-  themeSwatches.forEach(swatch => {
-    if (swatch.dataset.theme === theme) {
-      swatch.classList.add('active');
-    } else {
-      swatch.classList.remove('active');
-    }
-  });
-}
-
-// Confetti effect
-function triggerConfetti() {
-  if (!showConfetti) return;
-  const container = document.getElementById('confettiContainer');
-  if (!container) return;
-  
-  for (let i = 0; i < 120; i++) {
-    const confetti = document.createElement('div');
-    confetti.classList.add('confetti-piece');
-    confetti.style.left = Math.random() * 100 + '%';
-    confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 80%, 60%)`;
-    confetti.style.width = Math.random() * 8 + 4 + 'px';
-    confetti.style.height = Math.random() * 8 + 4 + 'px';
-    confetti.style.animationDuration = Math.random() * 2 + 1.5 + 's';
-    confetti.style.animationDelay = Math.random() * 0.5 + 's';
-    container.appendChild(confetti);
-    setTimeout(() => confetti.remove(), 3000);
-  }
-}
-
-function showResult(segmentText) {
-  resultText.textContent = segmentText;
-  resultModal.classList.add('open');
-  triggerConfetti();
-}
-
-function closeModal() {
-  resultModal.classList.remove('open');
-}
-
-// ===== WHEEL DRAWING FUNCTION =====
-function drawWheel(ctx, width, height, segments, rotation = 0) {
+// =============================================
+// WHEEL DRAWING (will be expanded in wheel.js)
+// =============================================
+function drawWheel() {
+  if (!wheelApp.ctx || !wheelApp.canvas) return;
+  const ctx = wheelApp.ctx;
+  const width = wheelApp.canvas.width;
+  const height = wheelApp.canvas.height;
   const centerX = width / 2;
   const centerY = height / 2;
-  const radius = Math.min(width, height) / 2 - 5;
+  const radius = width * 0.45;
   
-  if (segments.length === 0) {
-    ctx.fillStyle = '#1a1a35';
-    ctx.fillRect(0, 0, width, height);
-    ctx.fillStyle = '#9090bb';
-    ctx.font = `bold ${Math.floor(radius / 8)}px 'Nunito'`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('Add Items', centerX, centerY);
-    return;
-  }
+  ctx.clearRect(0, 0, width, height);
+  const segmentAngle = (Math.PI * 2) / wheelApp.segments.length;
   
-  const angleStep = (Math.PI * 2) / segments.length;
-  const colors = getThemeColors(currentTheme, segments.length);
-  
-  for (let i = 0; i < segments.length; i++) {
-    const startAngle = i * angleStep + rotation;
-    const endAngle = (i + 1) * angleStep + rotation;
+  for (let i = 0; i < wheelApp.segments.length; i++) {
+    const startAngle = i * segmentAngle + wheelApp.spinAngle;
+    const endAngle = (i + 1) * segmentAngle + wheelApp.spinAngle;
     
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-    ctx.closePath();
-    
-    ctx.fillStyle = colors[i];
+    ctx.fillStyle = wheelApp.colors[i % wheelApp.colors.length];
     ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-    ctx.lineWidth = 1.5;
+    ctx.save();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
     ctx.stroke();
-    
-    // Draw text
-    const textAngle = startAngle + angleStep / 2;
-    const textRadius = radius * 0.7;
-    const x = centerX + Math.cos(textAngle) * textRadius;
-    const y = centerY + Math.sin(textAngle) * textRadius;
+    ctx.restore();
     
     ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(textAngle + Math.PI / 2);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${fontSize}px 'Nunito'`;
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 3;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    
-    let displayText = segments[i].text;
-    if (displayText.length > 12) displayText = displayText.substring(0, 10) + '..';
-    ctx.fillText(displayText, 0, 0);
+    ctx.translate(centerX, centerY);
+    ctx.rotate(startAngle + segmentAngle / 2);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#fff";
+    ctx.font = `bold ${Math.max(10, Math.min(18, radius / 10))}px "Nunito"`;
+    ctx.shadowBlur = 0;
+    let text = wheelApp.segments[i];
+    if (text.length > 12) text = text.slice(0, 10) + "..";
+    ctx.fillText(text, radius * 0.65, 5);
     ctx.restore();
   }
   
   // Draw center circle
   ctx.beginPath();
   ctx.arc(centerX, centerY, radius * 0.12, 0, Math.PI * 2);
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = "#2d2040";
   ctx.fill();
-  ctx.shadowBlur = 0;
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius * 0.08, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffd600";
+  ctx.fill();
 }
 
-// ===== WHEEL SPIN ANIMATION =====
-function animateWheel(ctx, canvas, width, height, segments, getRotation, setRotation, onComplete) {
-  if (animationFrame) cancelAnimationFrame(animationFrame);
+function updateHeroWheel() {
+  if (!wheelApp.heroCtx || !wheelApp.heroCanvas) return;
+  const segments = ["Prize", "Game", "Movie", "Dinner", "Travel", "Music"];
+  const colors = ["#FF595E", "#FFCA3A", "#8AC926", "#1982C4", "#6A4C93", "#FF6D00"];
+  const ctx = wheelApp.heroCtx;
+  const w = wheelApp.heroCanvas.width;
+  const h = wheelApp.heroCanvas.height;
+  const cx = w/2, cy = h/2;
+  const rad = w * 0.42;
+  const angleStep = (Math.PI * 2) / segments.length;
   
-  const now = performance.now();
-  const elapsed = now - spinStartTime;
-  let progress = Math.min(1, elapsed / spinDuration);
-  
-  // Easing out cubic
-  const easeOut = 1 - Math.pow(1 - progress, 3);
-  const currentRotation = spinStartRotation + (spinTargetSegment * (Math.PI * 2 / segments.length)) * easeOut;
-  
-  setRotation(currentRotation);
-  drawWheel(ctx, width, height, segments, currentRotation);
-  
-  if (progress < 1) {
-    animationFrame = requestAnimationFrame(() => animateWheel(ctx, canvas, width, height, segments, getRotation, setRotation, onComplete));
-  } else {
-    animationFrame = null;
-    isSpinning = false;
-    if (onComplete) onComplete();
-  }
-}
-
-function startSpin(wheelInstance, segments, canvas, ctx, width, height, onWin) {
-  if (isSpinning || !segments.length) return;
-  
-  isSpinning = true;
-  
-  // Select random segment based on weights
-  let totalWeight = segments.reduce((sum, s) => sum + (s.weight || 1), 0);
-  let random = Math.random() * totalWeight;
-  let selectedIndex = 0;
-  let accumulated = 0;
+  ctx.clearRect(0, 0, w, h);
   for (let i = 0; i < segments.length; i++) {
-    accumulated += (segments[i].weight || 1);
-    if (random <= accumulated) {
-      selectedIndex = i;
-      break;
-    }
+    const start = i * angleStep;
+    const end = (i+1) * angleStep;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, rad, start, end);
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(start + angleStep/2);
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 12px Nunito";
+    ctx.shadowBlur = 0;
+    ctx.fillText(segments[i], rad * 0.65, 5);
+    ctx.restore();
   }
+  ctx.beginPath();
+  ctx.arc(cx, cy, rad*0.15, 0, Math.PI*2);
+  ctx.fillStyle = "#2d2040";
+  ctx.fill();
+}
+
+// =============================================
+// ENTRIES MANAGEMENT
+// =============================================
+function renderEntriesList() {
+  const container = document.getElementById('entriesList');
+  if (!container) return;
+  container.innerHTML = '';
+  wheelApp.segments.forEach((segment, idx) => {
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    row.innerHTML = `
+      <div class="entry-color-dot" style="background: ${wheelApp.colors[idx % wheelApp.colors.length]}"></div>
+      <input type="text" class="entry-input" value="${escapeHtml(segment)}" data-index="${idx}" />
+      <button class="entry-delete" data-index="${idx}">✖</button>
+    `;
+    container.appendChild(row);
+  });
+  document.getElementById('entryCount').textContent = wheelApp.segments.length;
   
-  spinTargetSegment = selectedIndex;
-  spinStartRotation = wheelInstance.rotation || 0;
-  // Add random extra spins (3-8 full rotations)
-  const extraSpins = Math.floor(Math.random() * 5) + 3;
-  spinTargetSegment = (spinTargetSegment - (wheelInstance.rotation / (Math.PI * 2 / segments.length))) % segments.length;
-  spinTargetSegment = (spinTargetSegment + segments.length * extraSpins) % segments.length;
-  
-  spinStartTime = performance.now();
-  
-  animateWheel(ctx, canvas, width, height, segments, 
-    () => wheelInstance.rotation,
-    (rot) => wheelInstance.rotation = rot,
-    () => {
-      const winningSegment = segments[selectedIndex];
-      if (winningSegment) {
-        addToHistory(winningSegment.text);
-        onWin(winningSegment.text);
-        
-        if (removeWinnerMode) {
-          segments.splice(selectedIndex, 1);
-          if (segments.length === 0) {
-            itemsTextarea.value = '';
-          } else {
-            itemsTextarea.value = segments.map(s => s.text).join('\n');
-          }
-          updateAllWheelsFromSegments();
-        }
-        saveToLocalStorage();
+  // Attach event listeners
+  document.querySelectorAll('.entry-input').forEach(input => {
+    input.addEventListener('change', (e) => {
+      const idx = parseInt(e.target.dataset.index);
+      if (!isNaN(idx) && e.target.value.trim()) {
+        wheelApp.segments[idx] = e.target.value.trim();
+        updateColorsForSegments();
+        drawWheel();
+        saveWheelToLocal();
       }
-    }
-  );
+    });
+  });
+  document.querySelectorAll('.entry-delete').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt(btn.dataset.index);
+      if (!isNaN(idx) && wheelApp.segments.length > 1) {
+        wheelApp.segments.splice(idx, 1);
+        updateColorsForSegments();
+        renderEntriesList();
+        drawWheel();
+        saveWheelToLocal();
+      } else if (wheelApp.segments.length <= 1) {
+        showToast("You need at least one entry!");
+      }
+    });
+  });
 }
 
-// ===== WHEEL INSTANCE CLASS =====
-class WheelInstance {
-  constructor(canvas, segments = []) {
-    this.canvas = canvas;
-    this.ctx = canvas.getContext('2d');
-    this.segments = segments;
-    this.rotation = 0;
-    this.width = canvas.width;
-    this.height = canvas.height;
-    this.resizeObserver = null;
-    
-    this.handleResize = this.handleResize.bind(this);
-    window.addEventListener('resize', this.handleResize);
-    this.handleResize();
-  }
-  
-  handleResize() {
-    const container = this.canvas.parentElement;
-    if (container) {
-      const size = Math.min(container.clientWidth, 400);
-      this.canvas.width = size;
-      this.canvas.height = size;
-      this.width = size;
-      this.height = size;
-      this.draw();
-    }
-  }
-  
-  draw() {
-    drawWheel(this.ctx, this.width, this.height, this.segments, this.rotation);
-  }
-  
-  updateSegments(segments) {
-    this.segments = segments;
-    this.draw();
-  }
-  
-  spin(onWin) {
-    if (isSpinning || !this.segments.length) return;
-    startSpin(this, this.segments, this.canvas, this.ctx, this.width, this.height, onWin);
+function updateColorsForSegments() {
+  const themeColors = THEMES[wheelApp.currentTheme] || THEMES.rainbow;
+  wheelApp.colors = [];
+  for (let i = 0; i < wheelApp.segments.length; i++) {
+    wheelApp.colors.push(themeColors[i % themeColors.length]);
   }
 }
 
-// ===== UPDATE ALL WHEELS =====
-function updateAllWheelsFromSegments() {
-  mainWheel.updateSegments(mainSegments);
-  heroWheel.updateSegments(mainSegments.slice(0, 6));
-  featureWheel.updateSegments(mainSegments.slice(0, 8));
-  
-  // Update textarea if needed
-  if (itemsTextarea.value.split('\n').filter(l => l.trim()).length !== mainSegments.length) {
-    itemsTextarea.value = mainSegments.map(s => s.text).join('\n');
-  }
+function addNewEntry() {
+  const newName = `Option ${wheelApp.segments.length + 1}`;
+  wheelApp.segments.push(newName);
+  updateColorsForSegments();
+  renderEntriesList();
+  drawWheel();
+  saveWheelToLocal();
+  showToast(`Added "${newName}"`);
 }
 
-// ===== BUILD WHEEL FROM TEXTAREA =====
-function buildWheelFromText() {
-  const text = itemsTextarea.value;
-  const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
-  if (lines.length === 0) {
-    mainSegments = [];
+function clearAllEntries() {
+  if (wheelApp.segments.length <= 1) {
+    wheelApp.segments = ["Spin Me!"];
   } else {
-    mainSegments = lines.map(text => ({ text: text.trim(), weight: 1 }));
+    if (confirm("Are you sure you want to clear all entries?")) {
+      wheelApp.segments = ["Spin Me!"];
+      updateColorsForSegments();
+      renderEntriesList();
+      drawWheel();
+      saveWheelToLocal();
+      showToast("All entries cleared");
+    }
   }
-  updateAllWheelsFromSegments();
-  saveToLocalStorage();
 }
 
-function shuffleItems() {
-  const items = mainSegments.map(s => s.text);
-  for (let i = items.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [items[i], items[j]] = [items[j], items[i]];
+function loadPreset(presetType) {
+  const presets = {
+    lunch: ["🍔 Burger", "🍕 Pizza", "🥗 Salad", "🍣 Sushi", "🌮 Tacos", "🍜 Ramen", "🥪 Sandwich", "🍝 Pasta"],
+    chores: ["🧹 Sweep", "🧼 Dishes", "🗑 Trash", "🧺 Laundry", "🍳 Cook", "💸 Shopping", "🚽 Bathroom", "🌿 Plants"],
+    games: ["🎮 Valorant", "🎲 Chess", "🎯 Among Us", "⚽ FIFA", "🏀 NBA 2K", "🎴 Poker", "🧩 Minecraft", "🚗 GTA"],
+    truth: ["Truth", "Dare", "Truth", "Dare", "Truth", "Dare", "Double Dare", "Wild Card"],
+    days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    team: ["Design", "Frontend", "Backend", "Testing", "Docs", "PM", "QA", "DevOps"]
+  };
+  const entries = presets[presetType];
+  if (entries) {
+    wheelApp.segments = [...entries];
+    updateColorsForSegments();
+    renderEntriesList();
+    drawWheel();
+    saveWheelToLocal();
+    showToast(`${presetType} wheel loaded!`);
   }
-  itemsTextarea.value = items.join('\n');
-  buildWheelFromText();
 }
 
-function clearItems() {
-  itemsTextarea.value = '';
-  mainSegments = [];
-  updateAllWheelsFromSegments();
-  saveToLocalStorage();
+// =============================================
+// HISTORY MANAGEMENT
+// =============================================
+function addToHistory(winner) {
+  wheelApp.history.unshift(winner);
+  if (wheelApp.history.length > 20) wheelApp.history.pop();
+  updateHistoryUI();
+  saveWheelToLocal();
+}
+
+function updateHistoryUI() {
+  const historyList = document.getElementById('historyList');
+  const clearBtn = document.getElementById('clearHistoryBtn');
+  if (!historyList) return;
+  if (wheelApp.history.length === 0) {
+    historyList.innerHTML = '<p class="history-empty">Spin to see results here!</p>';
+    if (clearBtn) clearBtn.style.display = 'none';
+    return;
+  }
+  if (clearBtn) clearBtn.style.display = 'block';
+  historyList.innerHTML = wheelApp.history.map((item, idx) => `
+    <div class="history-item">
+      <span class="history-num">#${idx+1}</span>
+      <span>🎡 ${escapeHtml(item)}</span>
+    </div>
+  `).join('');
 }
 
 function clearHistory() {
-  spinHistory = [];
+  wheelApp.history = [];
   updateHistoryUI();
-  saveToLocalStorage();
+  saveWheelToLocal();
+  showToast("History cleared");
 }
 
-// ===== CHANGE THEME =====
-function setTheme(theme) {
-  currentTheme = theme;
-  updateAllWheelsFromSegments();
-  saveToLocalStorage();
-}
-
-// ===== CHANGE FONT SIZE =====
-function setFontSize(size) {
-  fontSize = parseInt(size);
-  updateAllWheelsFromSegments();
-  saveToLocalStorage();
-}
-
-// ===== WHEEL TYPES DATA =====
-const wheelTypes = [
-  { name: "Yes/No", icon: "✅❌", desc: "Classic decision maker", items: ["Yes", "No"], badge: "Decision" },
-  { name: "Number Picker", icon: "🔢", desc: "Pick 1-10 or customize", items: ["1","2","3","4","5","6","7","8","9","10"], badge: "Numbers" },
-  { name: "Alphabet", icon: "🔤", desc: "Random letter generator", items: ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"], badge: "Letters" },
-  { name: "Food Picker", icon: "🍕", desc: "What to eat tonight?", items: ["Pizza", "Tacos", "Sushi", "Burgers", "Pasta", "Salad"], badge: "Food" },
-  { name: "Chore Wheel", icon: "🧹", desc: "Household tasks", items: ["Dishes", "Laundry", "Vacuum", "Trash", "Bathroom", "Dust"], badge: "Home" },
-  { name: "Party Games", icon: "🎉", desc: "Fun dares & challenges", items: ["Dance", "Sing", "Truth", "Dare", "Shot", "Story"], badge: "Games" }
-];
-
-function loadWheelTypes() {
-  if (!wheelTypesGrid) return;
-  wheelTypesGrid.innerHTML = wheelTypes.map(type => `
-    <div class="wheel-type-card" data-items='${JSON.stringify(type.items)}'>
-      <span class="wt-icon">${type.icon}</span>
-      <div class="wt-name">${type.name}</div>
-      <div class="wt-desc">${type.desc}</div>
-      <span class="wt-badge">${type.badge}</span>
-    </div>
-  `).join('');
+// =============================================
+// WHEEL SPIN LOGIC
+// =============================================
+function spinWheel() {
+  if (wheelApp.spinning) return;
+  if (wheelApp.segments.length === 0) {
+    showToast("Please add some entries first!");
+    return;
+  }
   
-  document.querySelectorAll('.wheel-type-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const items = JSON.parse(card.dataset.items);
-      itemsTextarea.value = items.join('\n');
-      buildWheelFromText();
-      document.getElementById('spinner').scrollIntoView({ behavior: 'smooth' });
-    });
-  });
-}
-
-// ===== FAQ DATA =====
-const faqData = [
-  { q: "Is RandomizerWheel free?", a: "Yes! RandomizerWheel is completely free to use. No sign-up, no subscription, no hidden fees. Just spin the wheel as many times as you want." },
-  { q: "Do I need an account?", a: "No account needed. Your wheel saves automatically in your browser's local storage. Just visit and start spinning instantly." },
-  { q: "Is the wheel truly random?", a: "Yes. We use a cryptographically-seeded random algorithm ensuring every spin is fair and unbiased. The wheel selection is truly random." },
-  { q: "Can I create a custom wheel?", a: "Absolutely! Add your own items line by line in the text area. You can create wheels for any purpose - giveaways, classroom activities, game nights, or decision making." },
-  { q: "How many items can I add?", a: "You can add as many items as you want! The wheel automatically adjusts to display all items proportionally." },
-  { q: "Can I share my wheel?", a: "Yes! Your custom wheel settings are saved locally. You can also copy the URL and share it with others - they'll see your wheel setup if you use the share feature." },
-  { q: "What is remove winner mode?", a: "Remove winner mode automatically removes the winning segment after each spin. This ensures the same option can't be picked twice in a row - great for giveaways!" },
-  { q: "Does it work on mobile?", a: "Yes! Our spin wheel is fully responsive and touch-optimized. It works perfectly on phones, tablets, and desktop devices." }
-];
-
-function loadFaq() {
-  if (!faqList) return;
-  faqList.innerHTML = faqData.map((item, idx) => `
-    <div class="faq-item">
-      <button class="faq-q">
-        <span>${item.q}</span>
-        <span class="arrow">▼</span>
-      </button>
-      <div class="faq-a">
-        <div class="faq-a-inner">${item.a}</div>
-      </div>
-    </div>
-  `).join('');
+  wheelApp.spinning = true;
+  playSound('spin');
   
-  document.querySelectorAll('.faq-item').forEach(item => {
-    const qBtn = item.querySelector('.faq-q');
-    qBtn.addEventListener('click', () => {
-      item.classList.toggle('open');
-    });
-  });
+  const randomSegment = Math.floor(Math.random() * wheelApp.segments.length);
+  const segmentAngle = (Math.PI * 2) / wheelApp.segments.length;
+  const targetAngle = (Math.PI * 2) - (randomSegment * segmentAngle) - (segmentAngle / 2);
+  
+  const startAngle = wheelApp.spinAngle % (Math.PI * 2);
+  let delta = targetAngle - startAngle;
+  if (delta < 0) delta += Math.PI * 2;
+  
+  const totalDelta = delta + (Math.PI * 2 * 5);
+  const startTime = performance.now();
+  const duration = 2000;
+  
+  function animateSpin(now) {
+    const elapsed = now - startTime;
+    let t = Math.min(1, elapsed / duration);
+    const easeOut = 1 - Math.pow(1 - t, 3);
+    const currentDelta = totalDelta * easeOut;
+    wheelApp.spinAngle = startAngle + currentDelta;
+    wheelApp.spinAngle %= (Math.PI * 2);
+    drawWheel();
+    
+    if (t < 1) {
+      requestAnimationFrame(animateSpin);
+    } else {
+      wheelApp.spinAngle = targetAngle;
+      drawWheel();
+      const winner = wheelApp.segments[randomSegment];
+      showWinner(winner);
+      
+      if (wheelApp.removeWinner && wheelApp.segments.length > 1) {
+        wheelApp.segments.splice(randomSegment, 1);
+        updateColorsForSegments();
+        renderEntriesList();
+      }
+      
+      addToHistory(winner);
+      playSound('cheer');
+      if (wheelApp.confettiEnabled) showConfetti();
+      
+      wheelApp.spinning = false;
+      saveWheelToLocal();
+    }
+  }
+  
+  requestAnimationFrame(animateSpin);
 }
 
-// ===== SCROLL REVEAL ANIMATION =====
-function initScrollReveal() {
-  const reveals = document.querySelectorAll('.reveal');
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
+function showWinner(winner) {
+  const winnerDisplay = document.getElementById('winnerDisplay');
+  const winnerName = document.getElementById('winnerName');
+  if (winnerDisplay && winnerName) {
+    winnerName.textContent = winner;
+    winnerDisplay.style.display = 'block';
+    setTimeout(() => {
+      if (document.getElementById('winnerDisplay')) {
+        // Auto-hide after 5 seconds
+      }
+    }, 5000);
+  }
+  showToast(`🎉 Winner: ${winner} 🎉`, 4000);
+}
+
+// =============================================
+// THEME MANAGEMENT
+// =============================================
+function setTheme(themeName) {
+  if (THEMES[themeName]) {
+    wheelApp.currentTheme = themeName;
+    updateColorsForSegments();
+    drawWheel();
+    // Update active button styling
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      if (btn.dataset.theme === themeName) btn.classList.add('active');
+      else btn.classList.remove('active');
+    });
+    saveWheelToLocal();
+  }
+}
+
+// =============================================
+// LOCAL STORAGE
+// =============================================
+function saveWheelToLocal() {
+  const saveData = {
+    segments: wheelApp.segments,
+    currentTheme: wheelApp.currentTheme,
+    history: wheelApp.history,
+    soundEnabled: wheelApp.soundEnabled,
+    confettiEnabled: wheelApp.confettiEnabled,
+    removeWinner: wheelApp.removeWinner
+  };
+  localStorage.setItem('randomizerWheel', JSON.stringify(saveData));
+}
+
+function loadWheelFromLocal() {
+  const saved = localStorage.getItem('randomizerWheel');
+  if (saved) {
+    try {
+      const data = JSON.parse(saved);
+      if (data.segments && data.segments.length) wheelApp.segments = data.segments;
+      if (data.currentTheme) wheelApp.currentTheme = data.currentTheme;
+      if (data.history) wheelApp.history = data.history;
+      if (typeof data.soundEnabled === 'boolean') wheelApp.soundEnabled = data.soundEnabled;
+      if (typeof data.confettiEnabled === 'boolean') wheelApp.confettiEnabled = data.confettiEnabled;
+      if (typeof data.removeWinner === 'boolean') wheelApp.removeWinner = data.removeWinner;
+      
+      // Sync UI toggles
+      document.getElementById('soundToggle').checked = wheelApp.soundEnabled;
+      document.getElementById('confettiToggle').checked = wheelApp.confettiEnabled;
+      document.getElementById('removeToggle').checked = wheelApp.removeWinner;
+    } catch(e) { console.warn(e); }
+  }
+  updateColorsForSegments();
+  updateHistoryUI();
+}
+
+// =============================================
+// SHARE & EXPORT FUNCTIONS
+// =============================================
+function copyShareLink() {
+  const url = window.location.href.split('#')[0];
+  const state = btoa(JSON.stringify({
+    s: wheelApp.segments,
+    t: wheelApp.currentTheme
+  }));
+  const shareUrl = `${url}?load=${encodeURIComponent(state)}`;
+  navigator.clipboard.writeText(shareUrl);
+  showToast("Link copied to clipboard!");
+}
+
+function saveWheelAsImage() {
+  if (!wheelApp.canvas) return;
+  const link = document.createElement('a');
+  link.download = 'wheel-spin.png';
+  link.href = wheelApp.canvas.toDataURL();
+  link.click();
+  showToast("Wheel image saved!");
+}
+
+// =============================================
+// TAB/PRESET EVENT HANDLERS
+// =============================================
+function initTabSwitching() {
+  const tabs = document.querySelectorAll('.tab-btn');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const type = tab.dataset.wheel;
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      const presetsMap = {
+        yesno: ["Yes ✅", "No ❌"],
+        numbers: ["1", "2", "3", "4", "5", "6", "7", "8"],
+        colors: ["🔴 Red", "🔵 Blue", "🟢 Green", "🟡 Yellow", "🟣 Purple", "🟠 Orange"],
+        names: ["Alice", "Bob", "Charlie", "Diana", "Ethan", "Fiona", "George", "Hannah"]
+      };
+      if (presetsMap[type]) {
+        wheelApp.segments = [...presetsMap[type]];
+        wheelApp.currentPresetType = type;
+        updateColorsForSegments();
+        renderEntriesList();
+        drawWheel();
+        saveWheelToLocal();
+        showToast(`${type} wheel loaded!`);
+      } else if (type === 'custom') {
+        // Load custom from storage or default
+        loadWheelFromLocal();
+        renderEntriesList();
+        drawWheel();
       }
     });
-  }, { threshold: 0.1 });
-  reveals.forEach(el => observer.observe(el));
-}
-
-// ===== HEADER SCROLL EFFECT =====
-function initHeaderScroll() {
-  const header = document.querySelector('.site-header');
-  if (!header) return;
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 50) {
-      header.classList.add('scrolled');
-    } else {
-      header.classList.remove('scrolled');
-    }
   });
 }
 
-// ===== MOBILE MENU =====
-function initMobileMenu() {
-  const hamburger = document.querySelector('.hamburger');
-  const mobileNav = document.querySelector('.mobile-nav');
-  if (hamburger && mobileNav) {
-    hamburger.addEventListener('click', () => {
-      mobileNav.classList.toggle('open');
-    });
+// =============================================
+// INITIALIZATION
+// =============================================
+function initEventListeners() {
+  // Spin button
+  const spinBtn = document.getElementById('mainSpinBtn');
+  if (spinBtn) spinBtn.addEventListener('click', () => spinWheel());
+  
+  // Hero spin button
+  const heroSpin = document.getElementById('heroSpinBtn');
+  if (heroSpin) heroSpin.addEventListener('click', () => spinWheel());
+  
+  // Add entry
+  const addBtn = document.getElementById('addEntryBtn');
+  if (addBtn) addBtn.addEventListener('click', () => addNewEntry());
+  
+  // Clear all
+  const clearBtn = document.getElementById('clearAllBtn');
+  if (clearBtn) clearBtn.addEventListener('click', () => clearAllEntries());
+  
+  // Settings toggles
+  const soundToggle = document.getElementById('soundToggle');
+  if (soundToggle) soundToggle.addEventListener('change', (e) => {
+    wheelApp.soundEnabled = e.target.checked;
+    saveWheelToLocal();
+  });
+  const confettiToggle = document.getElementById('confettiToggle');
+  if (confettiToggle) confettiToggle.addEventListener('change', (e) => {
+    wheelApp.confettiEnabled = e.target.checked;
+    saveWheelToLocal();
+  });
+  const removeToggle = document.getElementById('removeToggle');
+  if (removeToggle) removeToggle.addEventListener('change', (e) => {
+    wheelApp.removeWinner = e.target.checked;
+    saveWheelToLocal();
+  });
+  
+  // Clear history
+  const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+  if (clearHistoryBtn) clearHistoryBtn.addEventListener('click', () => clearHistory());
+  
+  // Theme buttons
+  document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.addEventListener('click', () => setTheme(btn.dataset.theme));
+  });
+  
+  // Preset buttons
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => loadPreset(btn.dataset.preset));
+  });
+  
+  // Share buttons
+  const copyLink = document.getElementById('copyLinkBtn');
+  if (copyLink) copyLink.addEventListener('click', () => copyShareLink());
+  const saveImg = document.getElementById('saveImageBtn');
+  if (saveImg) saveImg.addEventListener('click', () => saveWheelAsImage());
+  
+  // Spin again button
+  const spinAgain = document.getElementById('spinAgainBtn');
+  if (spinAgain) spinAgain.addEventListener('click', () => {
+    document.getElementById('winnerDisplay').style.display = 'none';
+    spinWheel();
+  });
+}
+
+function escapeHtml(str) {
+  return str.replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
+}
+
+// Initialize on load
+window.addEventListener('DOMContentLoaded', () => {
+  // Set up canvas references
+  const mainCanvas = document.getElementById('mainWheel');
+  const heroCanvasElem = document.getElementById('heroMiniWheel');
+  if (mainCanvas) {
+    wheelApp.canvas = mainCanvas;
+    wheelApp.ctx = mainCanvas.getContext('2d');
+    // Set canvas dimensions
+    const size = Math.min(460, window.innerWidth - 100);
+    mainCanvas.width = size;
+    mainCanvas.height = size;
   }
-}
-
-// ===== LOAD HEADER AND FOOTER =====
-async function loadHeaderAndFooter() {
-  // Header HTML
-  const headerHtml = `
-    <header class="site-header">
-      <div class="header-inner">
-        <a href="/" class="logo">
-          <div class="logo-icon">🎡</div>
-          <div class="logo-text">Randomizer<span>Wheel</span></div>
-        </a>
-        <div class="hamburger">
-          <span></span><span></span><span></span>
-        </div>
-        <div class="nav">
-          <a href="#home">Home</a>
-          <a href="#spinner">Spinner</a>
-          <a href="#wheel-types">Wheels</a>
-          <a href="#how-it-works">How It Works</a>
-          <a href="#features">Features</a>
-          <a href="#faq">FAQ</a>
-          <a href="#spinner" class="btn btn-primary btn-sm">🎰 Spin Now</a>
-        </div>
-      </div>
-    </header>
-    <div class="mobile-nav">
-      <a href="#home">Home</a>
-      <a href="#spinner">Spinner</a>
-      <a href="#wheel-types">Wheels</a>
-      <a href="#how-it-works">How It Works</a>
-      <a href="#features">Features</a>
-      <a href="#faq">FAQ</a>
-      <a href="#spinner">Spin Now</a>
-    </div>
-  `;
-  
-  // Footer HTML
-  const footerHtml = `
-    <footer class="site-footer">
-      <div class="container">
-        <div class="footer-inner">
-          <div class="footer-brand">
-            <a href="/" class="logo">
-              <div class="logo-icon">🎡</div>
-              <div class="logo-text">Randomizer<span>Wheel</span></div>
-            </a>
-            <p>The most advanced free spin the wheel app. Make any decision fun and fair.</p>
-          </div>
-          <div class="footer-col">
-            <h4>Product</h4>
-            <ul>
-              <li><a href="#spinner">Wheel Spinner</a></li>
-              <li><a href="#wheel-types">Wheel Types</a></li>
-              <li><a href="#how-it-works">How It Works</a></li>
-              <li><a href="#features">Features</a></li>
-            </ul>
-          </div>
-          <div class="footer-col">
-            <h4>Resources</h4>
-            <ul>
-              <li><a href="#faq">FAQ</a></li>
-              <li><a href="#">Privacy Policy</a></li>
-              <li><a href="#">Terms of Use</a></li>
-              <li><a href="#">Contact</a></li>
-            </ul>
-          </div>
-          <div class="footer-col">
-            <h4>Community</h4>
-            <ul>
-              <li><a href="#">Blog</a></li>
-              <li><a href="#">Feedback</a></li>
-              <li><a href="#">Suggest a Feature</a></li>
-            </ul>
-          </div>
-        </div>
-        <div class="footer-bottom">
-          <p>© 2025 RandomizerWheel | Free Spin The Wheel Random Picker</p>
-          <div class="footer-keywords">Random Wheel | Wheel Spinner | Spin Wheel | Random Picker | Decision Maker</div>
-        </div>
-      </div>
-    </footer>
-  `;
-  
-  if (headerRoot) headerRoot.innerHTML = headerHtml;
-  if (footerRoot) footerRoot.innerHTML = footerHtml;
-  
-  initMobileMenu();
-  initHeaderScroll();
-}
-
-// ===== INITIALIZE APP =====
-async function init() {
-  await loadHeaderAndFooter();
-  
-  // Initialize wheels
-  mainWheel = new WheelInstance(mainCanvas, []);
-  heroWheel = new WheelInstance(heroCanvas, []);
-  featureWheel = new WheelInstance(featureCanvas, []);
-  
-  // Load saved data
-  loadFromLocalStorage();
-  
-  // Default demo items if empty
-  if (mainSegments.length === 0) {
-    const defaultItems = ["Pizza", "Tacos", "Burgers", "Sushi", "Pasta", "Salad"];
-    itemsTextarea.value = defaultItems.join('\n');
-    mainSegments = defaultItems.map(text => ({ text, weight: 1 }));
-    updateAllWheelsFromSegments();
-  } else {
-    updateAllWheelsFromSegments();
+  if (heroCanvasElem) {
+    wheelApp.heroCanvas = heroCanvasElem;
+    wheelApp.heroCtx = heroCanvasElem.getContext('2d');
+    heroCanvasElem.width = 260;
+    heroCanvasElem.height = 260;
   }
   
-  // Event listeners
-  buildWheelBtn.addEventListener('click', buildWheelFromText);
-  shuffleItemsBtn.addEventListener('click', shuffleItems);
-  clearItemsBtn.addEventListener('click', clearItems);
-  clearHistoryBtn.addEventListener('click', clearHistory);
+  loadWheelFromLocal();
+  renderEntriesList();
+  updateHistoryUI();
+  initTabSwitching();
+  initEventListeners();
+  drawWheel();
+  updateHeroWheel();
   
-  mainSpinBtn.addEventListener('click', () => mainWheel.spin(showResult));
-  mainSpinBtnBottom.addEventListener('click', () => mainWheel.spin(showResult));
-  heroSpinBtn.addEventListener('click', () => heroWheel.spin(showResult));
-  featureSpinBtn.addEventListener('click', () => featureWheel.spin(showResult));
+  // Handle URL params for share
+  const urlParams = new URLSearchParams(window.location.search);
+  const loadData = urlParams.get('load');
+  if (loadData) {
+    try {
+      const decoded = JSON.parse(atob(loadData));
+      if (decoded.s) wheelApp.segments = decoded.s;
+      if (decoded.t) setTheme(decoded.t);
+      renderEntriesList();
+      drawWheel();
+      showToast("Shared wheel loaded!");
+    } catch(e) { console.warn(e); }
+  }
   
-  fontSizeRange.addEventListener('input', (e) => setFontSize(e.target.value));
-  removeWinnerCheckbox.addEventListener('change', (e) => {
-    removeWinnerMode = e.target.checked;
-    saveToLocalStorage();
-  });
-  showConfettiCheckbox.addEventListener('change', (e) => {
-    showConfetti = e.target.checked;
-    saveToLocalStorage();
-  });
-  
-  themeSwatches.forEach(swatch => {
-    swatch.addEventListener('click', () => setTheme(swatch.dataset.theme));
-  });
-  
-  spinAgainBtn.addEventListener('click', closeModal);
-  closeModalBtn.addEventListener('click', closeModal);
-  resultModal.addEventListener('click', (e) => {
-    if (e.target === resultModal) closeModal();
-  });
-  
-  // Load wheel types and FAQ
-  loadWheelTypes();
-  loadFaq();
-  
-  // Add reveal class to sections
-  document.querySelectorAll('section').forEach(section => {
-    section.classList.add('reveal');
-  });
-  initScrollReveal();
-  
-  // Add confetti container styles if missing
-  const style = document.createElement('style');
-  style.textContent = `
-    .confetti-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 9999;
-      overflow: hidden;
+  // Resize handler
+  window.addEventListener('resize', () => {
+    if (mainCanvas && window.innerWidth < 768) {
+      const newSize = Math.min(320, window.innerWidth - 60);
+      mainCanvas.width = newSize;
+      mainCanvas.height = newSize;
+    } else if (mainCanvas && window.innerWidth >= 768) {
+      mainCanvas.width = 460;
+      mainCanvas.height = 460;
     }
-    .reveal {
-      opacity: 0;
-      transform: translateY(30px);
-      transition: all 0.7s ease;
-    }
-    .reveal.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-// Start the app when DOM is ready
-document.addEventListener('DOMContentLoaded', init);
+    drawWheel();
+  });
+});
