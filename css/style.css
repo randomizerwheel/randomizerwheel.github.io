@@ -601,3 +601,25 @@ input:checked + .toggle::after { left: 21px; }
   .wheel-type-tabs { flex-direction: column; }
   .tab-btn { text-align: center; }
 }
+/* Mobile: Show wheel first, then controls */
+@media (max-width: 768px) {
+  .app-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Move wheel to the top */
+  .wheel-center {
+    order: -1;
+    margin-bottom: 24px;
+  }
+  
+  /* Controls and right panel come after */
+  .app-controls {
+    order: 0;
+  }
+  
+  .app-right {
+    order: 1;
+  }
+}
