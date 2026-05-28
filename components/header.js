@@ -7,7 +7,7 @@
       <header class="site-header">
         <a href="/" class="header-logo">
           <span class="logo-icon">🎡</span>
-          <span>Randomizer<span style="color:#ff5733;">Wheel</span></span>
+          <span>Spin The<span style="color:#ff5733;">Wheel</span></span>
         </a>
         
         <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
