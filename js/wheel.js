@@ -1,539 +1,551 @@
-// ===== WHEEL.JS =====
-// Core wheel rendering and spinning engine for the Spin The Wheel application
+// wheel.js - Advanced wheel drawing and spinning logic for RandomizerWheel
 
-// ===== WHEEL CLASS =====
-class FortuneWheel {
-  constructor(canvasId, options = {}) {
-    this.canvas = typeof canvasId === 'string' ? document.getElementById(canvasId) : canvasId;
-    if (!this.canvas) {
-      console.error(`Canvas element not found: ${canvasId}`);
-      return;
-    }
-    
-    this.ctx = this.canvas.getContext('2d');
-    this.segments = [];
-    this.rotation = 0;
-    this.animationId = null;
-    this.isSpinning = false;
-    this.fontSize = options.fontSize || 14;
-    this.theme = options.theme || 'vivid';
-    this.onSpinStart = options.onSpinStart || null;
-    this.onSpinEnd = options.onSpinEnd || null;
-    this.onSegmentClick = options.onSegmentClick || null;
-    
-    // Bind methods
-    this.handleResize = this.handleResize.bind(this);
-    this.handleClick = this.handleClick.bind(this);
-    
-    // Setup event listeners
-    window.addEventListener('resize', this.handleResize);
-    this.canvas.addEventListener('click', this.handleClick);
-    
-    // Initial resize
-    setTimeout(() => this.handleResize(), 100);
-  }
-  
-  // ===== RESIZE HANDLER =====
-  handleResize() {
-    const container = this.canvas.parentElement;
-    if (container) {
-      const size = Math.min(container.clientWidth, 500);
-      this.canvas.width = size;
-      this.canvas.height = size;
-      this.draw();
-    }
-  }
-  
-  // ===== UPDATE SEGMENTS =====
-  updateSegments(segments) {
-    if (!segments || segments.length === 0) {
-      this.segments = [];
-    } else {
-      this.segments = segments.map((segment, index) => ({
-        id: index,
-        text: typeof segment === 'string' ? segment : segment.text,
-        value: typeof segment === 'object' ? segment.value || 1 : 1,
-        color: segment.color || null,
-        weight: typeof segment === 'object' ? segment.weight || 1 : 1
-      }));
-    }
-    this.draw();
-  }
-  
-  // ===== GET SEGMENT COLORS =====
-  getSegmentColors(segmentCount) {
-    const themes = {
-      vivid: ['#FF4D6D', '#FFB703', '#06D6A0', '#FF8C42', '#8338EC', '#3A86FF', '#E63946', '#F4A261', '#2A9D8F', '#9C89B8', '#EF476F', '#FFD166'],
-      neon: ['#FF00FF', '#00FFFF', '#AAFF00', '#FF6600', '#FF0099', '#00FFAA', '#FF3366', '#33FFCC', '#FFCC00', '#9933FF', '#00FF66', '#FF9933'],
-      pastel: ['#FFB3C1', '#FFD6A5', '#CAFFBF', '#BDE0FE', '#E4C1F9', '#FDE2C4', '#C5D3E8', '#FFC8DD', '#B5EAD7', '#C7E9FB', '#D4A5A5', '#FAD2E1'],
-      dark: ['#2D2D2D', '#555555', '#888888', '#AAAAAA', '#3A3A3A', '#666666', '#1E1E1E', '#4A4A4A', '#777777', '#999999', '#2F2F2F', '#5E5E5E'],
-      sunset: ['#F72585', '#FF8C00', '#FFD60A', '#B5179E', '#FF5C8A', '#FFB347', '#E63946', '#F4A261', '#9C27B0', '#FF6D00', '#FB8B67', '#F9C74F'],
-      ocean: ['#0077B6', '#00B4D8', '#48CAE4', '#90E0EF', '#03045E', '#023E8A', '#0096C7', '#35A7FF', '#4EA8DE', '#56CFE1', '#1A759F', '#34A0A4']
-    };
-    
-    const themeColors = themes[this.theme] || themes.vivid;
-    const colors = [];
-    for (let i = 0; i < segmentCount; i++) {
-      colors.push(themeColors[i % themeColors.length]);
-    }
-    return colors;
-  }
-  
-  // ===== DRAW THE WHEEL =====
-  draw() {
-    if (!this.ctx) return;
-    
-    const width = this.canvas.width;
-    const height = this.canvas.height;
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const radius = Math.min(width, height) / 2 - 5;
-    
-    // Clear canvas
-    this.ctx.clearRect(0, 0, width, height);
-    
-    // Draw background glow effect
-    this.ctx.shadowBlur = 0;
-    
-    if (this.segments.length === 0) {
-      // Draw empty wheel state
-      this.ctx.beginPath();
-      this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-      this.ctx.fillStyle = '#1a1a35';
-      this.ctx.fill();
-      this.ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-      this.ctx.lineWidth = 2;
-      this.ctx.stroke();
-      
-      this.ctx.fillStyle = '#9090bb';
-      this.ctx.font = `bold ${Math.floor(radius / 10)}px 'Nunito', sans-serif`;
-      this.ctx.textAlign = 'center';
-      this.ctx.textBaseline = 'middle';
-      this.ctx.fillText('Add Items', centerX, centerY);
-      return;
-    }
-    
-    const angleStep = (Math.PI * 2) / this.segments.length;
-    const colors = this.getSegmentColors(this.segments.length);
-    
-    // Draw each segment
-    for (let i = 0; i < this.segments.length; i++) {
-      const startAngle = i * angleStep + this.rotation;
-      const endAngle = (i + 1) * angleStep + this.rotation;
-      const segment = this.segments[i];
-      
-      // Draw segment arc
-      this.ctx.beginPath();
-      this.ctx.moveTo(centerX, centerY);
-      this.ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-      this.ctx.closePath();
-      
-      // Fill segment
-      this.ctx.fillStyle = segment.color || colors[i];
-      this.ctx.fill();
-      
-      // Draw segment border
-      this.ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-      this.ctx.lineWidth = 1.5;
-      this.ctx.stroke();
-      
-      // Draw separator line
-      this.ctx.beginPath();
-      this.ctx.moveTo(centerX, centerY);
-      this.ctx.lineTo(centerX + Math.cos(startAngle) * radius, centerY + Math.sin(startAngle) * radius);
-      this.ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-      this.ctx.stroke();
-      
-      // Draw text
-      const textAngle = startAngle + angleStep / 2;
-      const textRadius = radius * 0.65;
-      const x = centerX + Math.cos(textAngle) * textRadius;
-      const y = centerY + Math.sin(textAngle) * textRadius;
-      
-      this.ctx.save();
-      this.ctx.translate(x, y);
-      this.ctx.rotate(textAngle + Math.PI / 2);
-      this.ctx.fillStyle = '#ffffff';
-      this.ctx.font = `bold ${this.fontSize}px 'Nunito', sans-serif`;
-      this.ctx.shadowColor = 'rgba(0,0,0,0.3)';
-      this.ctx.shadowBlur = 3;
-      this.ctx.textAlign = 'center';
-      this.ctx.textBaseline = 'middle';
-      
-      let displayText = segment.text;
-      // Truncate long text based on available space
-      const maxChars = Math.floor(radius / (this.fontSize * 0.6));
-      if (displayText.length > maxChars) {
-        displayText = displayText.substring(0, maxChars - 2) + '..';
-      }
-      this.ctx.fillText(displayText, 0, 0);
-      this.ctx.restore();
-    }
-    
-    // Draw inner circle
-    this.ctx.beginPath();
-    this.ctx.arc(centerX, centerY, radius * 0.12, 0, Math.PI * 2);
-    this.ctx.fillStyle = '#ffffff';
-    this.ctx.fill();
-    this.ctx.shadowBlur = 0;
-    this.ctx.beginPath();
-    this.ctx.arc(centerX, centerY, radius * 0.09, 0, Math.PI * 2);
-    this.ctx.fillStyle = this.getSegmentColors(1)[0];
-    this.ctx.fill();
-    
-    // Draw outer ring
-    this.ctx.beginPath();
-    this.ctx.arc(centerX, centerY, radius + 3, 0, Math.PI * 2);
-    this.ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-    this.ctx.lineWidth = 2;
-    this.ctx.stroke();
-  }
-  
-  // ===== SPIN THE WHEEL =====
-  spin(options = {}) {
-    if (this.isSpinning || this.segments.length === 0) {
-      return null;
-    }
-    
-    const duration = options.duration || 2000;
-    const onComplete = options.onComplete || null;
-    const onWin = options.onWin || null;
-    
-    // Calculate winner based on weights
-    const totalWeight = this.segments.reduce((sum, s) => sum + (s.weight || 1), 0);
-    let random = Math.random() * totalWeight;
-    let winnerIndex = 0;
-    let accumulated = 0;
-    
-    for (let i = 0; i < this.segments.length; i++) {
-      accumulated += (this.segments[i].weight || 1);
-      if (random <= accumulated) {
-        winnerIndex = i;
-        break;
-      }
-    }
-    
-    const winner = this.segments[winnerIndex];
-    
-    // Calculate target rotation
-    const anglePerSegment = (Math.PI * 2) / this.segments.length;
-    const currentSegmentIndex = this.getCurrentSegmentIndex();
-    
-    // Calculate additional full rotations (5-10 spins)
-    const fullRotations = Math.floor(Math.random() * 6) + 5;
-    let targetRotation = this.rotation;
-    
-    // We want the pointer (top) to point to the winner segment
-    // Pointer is at angle -PI/2 (12 o'clock position)
-    const pointerAngle = -Math.PI / 2;
-    const targetAngleForWinner = (winnerIndex * anglePerSegment) + (anglePerSegment / 2);
-    
-    // Calculate needed rotation to align winner with pointer
-    let neededRotation = pointerAngle - targetAngleForWinner;
-    
-    // Normalize to [0, 2PI)
-    neededRotation = ((neededRotation % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
-    
-    // Add full rotations
-    targetRotation = neededRotation + (fullRotations * Math.PI * 2);
-    
-    // Animate
-    this.animateSpin(this.rotation, targetRotation, duration, () => {
-      this.isSpinning = false;
-      if (onComplete) onComplete(winner);
-      if (onWin) onWin(winner.text, winnerIndex);
-    });
-    
-    if (this.onSpinStart) this.onSpinStart();
-    
-    return winner;
-  }
-  
-  // ===== GET CURRENT SEGMENT INDEX AT TOP (12 o'clock) =====
-  getCurrentSegmentIndex() {
-    if (this.segments.length === 0) return -1;
-    
-    const anglePerSegment = (Math.PI * 2) / this.segments.length;
-    const pointerAngle = -Math.PI / 2; // 12 o'clock position
-    
-    // Calculate which segment is at the pointer
-    let rawAngle = (pointerAngle - this.rotation) % (Math.PI * 2);
-    if (rawAngle < 0) rawAngle += Math.PI * 2;
-    
-    const segmentIndex = Math.floor(rawAngle / anglePerSegment);
-    return Math.min(segmentIndex, this.segments.length - 1);
-  }
-  
-  // ===== ANIMATE SPIN =====
-  animateSpin(startRotation, targetRotation, duration, onComplete) {
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
-    }
-    
-    this.isSpinning = true;
-    const startTime = performance.now();
-    
-    const easeOutCubic = (t) => {
-      return 1 - Math.pow(1 - t, 3);
-    };
-    
-    const animate = (currentTime) => {
-      const elapsed = currentTime - startTime;
-      let progress = Math.min(1, elapsed / duration);
-      const easeProgress = easeOutCubic(progress);
-      
-      this.rotation = startRotation + (targetRotation - startRotation) * easeProgress;
-      this.draw();
-      
-      if (progress < 1) {
-        this.animationId = requestAnimationFrame(animate);
-      } else {
-        this.rotation = targetRotation % (Math.PI * 2);
-        this.draw();
-        this.animationId = null;
-        this.isSpinning = false;
-        if (onComplete) onComplete();
-      }
-    };
-    
-    this.animationId = requestAnimationFrame(animate);
-  }
-  
-  // ===== STOP SPIN (if needed) =====
-  stopSpin() {
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
-      this.animationId = null;
-      this.isSpinning = false;
-    }
-  }
-  
-  // ===== HANDLE CLICK ON WHEEL =====
-  handleClick(event) {
-    if (this.isSpinning) return;
-    
-    const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
-    
-    const mouseX = (event.clientX - rect.left) * scaleX;
-    const mouseY = (event.clientY - rect.top) * scaleY;
-    
-    const centerX = this.canvas.width / 2;
-    const centerY = this.canvas.height / 2;
-    const radius = Math.min(this.canvas.width, this.canvas.height) / 2 - 5;
-    
-    const dx = mouseX - centerX;
-    const dy = mouseY - centerY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Check if click is within wheel radius
-    if (distance <= radius && distance > radius * 0.15 && this.segments.length > 0) {
-      let angle = Math.atan2(dy, dx);
-      if (angle < 0) angle += Math.PI * 2;
-      
-      // Adjust for rotation
-      let adjustedAngle = angle - this.rotation;
-      if (adjustedAngle < 0) adjustedAngle += Math.PI * 2;
-      
-      const anglePerSegment = (Math.PI * 2) / this.segments.length;
-      const segmentIndex = Math.floor(adjustedAngle / anglePerSegment);
-      
-      if (segmentIndex >= 0 && segmentIndex < this.segments.length) {
-        if (this.onSegmentClick) {
-          this.onSegmentClick(this.segments[segmentIndex], segmentIndex);
-        }
-      }
-    }
-  }
-  
-  // ===== UPDATE THEME =====
-  setTheme(theme) {
-    this.theme = theme;
-    this.draw();
-  }
-  
-  // ===== UPDATE FONT SIZE =====
-  setFontSize(size) {
-    this.fontSize = size;
-    this.draw();
-  }
-  
-  // ===== GET SEGMENTS =====
-  getSegments() {
-    return [...this.segments];
-  }
-  
-  // ===== GET SEGMENT COUNT =====
-  getSegmentCount() {
-    return this.segments.length;
-  }
-  
-  // ===== IS SPINNING =====
-  getIsSpinning() {
-    return this.isSpinning;
-  }
-  
-  // ===== RESET ROTATION =====
-  resetRotation() {
-    this.rotation = 0;
-    this.draw();
-  }
-  
-  // ===== DESTROY WHEEL =====
-  destroy() {
-    this.stopSpin();
-    window.removeEventListener('resize', this.handleResize);
-    this.canvas.removeEventListener('click', this.handleClick);
-  }
-}
+// =============================================
+// WHEEL RENDERING ENGINE
+// =============================================
 
-// ===== PRESET WHEEL CONFIGURATIONS =====
-const WheelPresets = {
-  // Decision making wheels
-  yesNo: {
-    name: 'Yes / No',
-    segments: ['Yes', 'No'],
-    defaultTheme: 'vivid'
-  },
-  
-  // Number wheels
-  numbers1to10: {
-    name: 'Numbers 1-10',
-    segments: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-    defaultTheme: 'ocean'
-  },
-  
-  numbers1to20: {
-    name: 'Numbers 1-20',
-    segments: Array.from({ length: 20 }, (_, i) => (i + 1).toString()),
-    defaultTheme: 'ocean'
-  },
-  
-  // Alphabet wheels
-  alphabet: {
-    name: 'Alphabet A-Z',
-    segments: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
-    defaultTheme: 'pastel'
-  },
-  
-  vowels: {
-    name: 'Vowels',
-    segments: ['A', 'E', 'I', 'O', 'U', 'Y'],
-    defaultTheme: 'pastel'
-  },
-  
-  // Food wheels
-  foodPicker: {
-    name: 'Food Picker',
-    segments: ['Pizza', 'Tacos', 'Sushi', 'Burgers', 'Pasta', 'Salad', 'Sandwich', 'Soup'],
-    defaultTheme: 'vivid'
-  },
-  
-  cuisinePicker: {
-    name: 'Cuisine Picker',
-    segments: ['Italian', 'Mexican', 'Japanese', 'Chinese', 'Indian', 'Thai', 'French', 'Greek'],
-    defaultTheme: 'sunset'
-  },
-  
-  // Activity wheels
-  activityPicker: {
-    name: 'Activity Picker',
-    segments: ['Movie', 'Games', 'Reading', 'Exercise', 'Cooking', 'Music', 'Art', 'Walking'],
-    defaultTheme: 'neon'
-  },
-  
-  // Classroom wheels
-  studentPicker: {
-    name: 'Student Picker',
-    segments: [], // To be filled by user
-    defaultTheme: 'ocean'
-  },
-  
-  topicPicker: {
-    name: 'Topic Picker',
-    segments: ['Math', 'Science', 'History', 'English', 'Art', 'Music', 'PE', 'Geography'],
-    defaultTheme: 'pastel'
-  },
-  
-  // Game wheels
-  truthOrDare: {
-    name: 'Truth or Dare',
-    segments: ['Truth', 'Dare', 'Truth', 'Dare', 'Double Dare', 'Truth'],
-    defaultTheme: 'vivid'
-  },
-  
-  challengeWheel: {
-    name: 'Challenge Wheel',
-    segments: ['10 Pushups', 'Sing a Song', 'Tell a Joke', 'Dance', 'Facial Expression', 'Impersonation'],
-    defaultTheme: 'neon'
-  },
-  
-  // Chore wheels
-  choreWheel: {
-    name: 'Chore Wheel',
-    segments: ['Dishes', 'Laundry', 'Vacuum', 'Take out Trash', 'Clean Bathroom', 'Dust', 'Mop', 'Walk Dog'],
-    defaultTheme: 'dark'
-  },
-  
-  // Color wheels
-  colorWheel: {
-    name: 'Color Wheel',
-    segments: ['Red', 'Blue', 'Green', 'Yellow', 'Purple', 'Orange', 'Pink', 'Brown'],
-    defaultTheme: 'vivid'
-  },
-  
-  // Prize wheels
-  prizeWheel: {
-    name: 'Prize Wheel',
-    segments: ['$5 Gift Card', 'Free Coffee', '10% Off', 'Mystery Box', 'Free Shipping', 'Try Again'],
-    defaultTheme: 'sunset'
-  },
-  
-  // Random wheels
-  randomWords: {
-    name: 'Random Words',
-    segments: ['Happy', 'Awesome', 'Great', 'Wonderful', 'Amazing', 'Fantastic', 'Brilliant', 'Excellent'],
-    defaultTheme: 'pastel'
-  }
+// Cache for wheel rendering to improve performance
+let wheelCache = {
+  cached: false,
+  imageData: null,
+  segmentsHash: ""
 };
 
-// ===== HELPER FUNCTIONS =====
-function createRandomSegments(count, prefix = 'Item') {
-  const segments = [];
-  for (let i = 1; i <= count; i++) {
-    segments.push(`${prefix} ${i}`);
+function getSegmentsHash() {
+  return wheelApp.segments.join(",") + "|" + wheelApp.colors.join(",") + "|" + wheelApp.spinAngle;
+}
+
+// Main wheel drawing function with advanced features
+function drawWheel() {
+  if (!wheelApp.ctx || !wheelApp.canvas) return;
+  
+  const ctx = wheelApp.ctx;
+  const canvas = wheelApp.canvas;
+  const width = canvas.width;
+  const height = canvas.height;
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const radius = width * 0.45;
+  const segmentCount = wheelApp.segments.length;
+  
+  if (segmentCount === 0) {
+    drawEmptyWheel(ctx, centerX, centerY, radius);
+    return;
   }
-  return segments;
-}
-
-function createWeightedSegments(segments, weights) {
-  if (segments.length !== weights.length) {
-    console.error('Segments and weights must have same length');
-    return segments.map(s => ({ text: s, weight: 1 }));
+  
+  const segmentAngle = (Math.PI * 2) / segmentCount;
+  
+  // Clear canvas with gradient background
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, "#f8f2ff");
+  gradient.addColorStop(1, "#fff9f0");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+  
+  // Draw each segment
+  for (let i = 0; i < segmentCount; i++) {
+    const startAngle = i * segmentAngle + wheelApp.spinAngle;
+    const endAngle = (i + 1) * segmentAngle + wheelApp.spinAngle;
+    
+    // Draw segment arc
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+    ctx.closePath();
+    
+    // Fill with segment color
+    ctx.fillStyle = wheelApp.colors[i % wheelApp.colors.length];
+    ctx.fill();
+    
+    // Add subtle inner shadow/stroke
+    ctx.save();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "rgba(255,255,255,0.5)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+    
+    // Draw inner separator line
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.arc(centerX, centerY, radius * 0.85, startAngle, endAngle);
+    ctx.lineTo(centerX, centerY);
+    ctx.strokeStyle = "rgba(255,255,255,0.3)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    
+    // Draw text on segment
+    drawSegmentText(ctx, centerX, centerY, radius, startAngle, segmentAngle, wheelApp.segments[i], i);
   }
-  return segments.map((text, index) => ({ text, weight: weights[index] }));
+  
+  // Draw decorative outer ring
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius + 5, 0, Math.PI * 2);
+  ctx.strokeStyle = "#ffd600";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius + 2, 0, Math.PI * 2);
+  ctx.strokeStyle = "#ff5733";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  
+  // Draw inner decorative rings
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius * 0.85, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(255,255,255,0.4)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius * 0.7, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(255,255,255,0.3)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  
+  // Draw center hub
+  drawCenterHub(ctx, centerX, centerY, radius);
+  
+  // Draw outer dot pattern for visual appeal
+  drawOuterDots(ctx, centerX, centerY, radius + 8, segmentCount);
 }
 
-function shuffleSegments(segments) {
-  const shuffled = [...segments];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+function drawEmptyWheel(ctx, cx, cy, radius) {
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fillStyle = "#e0d5f0";
+  ctx.fill();
+  ctx.fillStyle = "#8a7aa8";
+  ctx.font = `bold ${Math.max(14, radius / 8)}px "Nunito"`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("Add Entries", cx, cy);
+}
+
+function drawSegmentText(ctx, cx, cy, radius, startAngle, segmentAngle, text, index) {
+  const textRadius = radius * 0.65;
+  const textAngle = startAngle + segmentAngle / 2;
+  const x = cx + Math.cos(textAngle) * textRadius;
+  const y = cy + Math.sin(textAngle) * textRadius;
+  
+  // Rotate text for better readability
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(textAngle + (textAngle > Math.PI/2 && textAngle < 3*Math.PI/2 ? Math.PI : 0));
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  
+  // Determine font size based on text length
+  let fontSize = Math.max(10, Math.min(18, radius / 10));
+  if (text.length > 15) fontSize = fontSize * 0.7;
+  else if (text.length > 10) fontSize = fontSize * 0.85;
+  
+  ctx.font = `bold ${fontSize}px "Nunito", "Segoe UI", sans-serif`;
+  
+  // Text shadow for better readability
+  ctx.shadowBlur = 2;
+  ctx.shadowColor = "rgba(0,0,0,0.3)";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(text, 0, 0);
+  
+  // Add second pass for stroke effect
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = "rgba(0,0,0,0.2)";
+  ctx.lineWidth = 1.5;
+  ctx.strokeText(text, 0, 0);
+  
+  ctx.restore();
+}
+
+function drawCenterHub(ctx, cx, cy, radius) {
+  const hubRadius = radius * 0.12;
+  const innerHubRadius = radius * 0.07;
+  
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, hubRadius, 0, Math.PI * 2);
+  ctx.fillStyle = "#2d2040";
+  ctx.fill();
+  ctx.strokeStyle = "#ffd600";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  
+  // Inner ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, innerHubRadius, 0, Math.PI * 2);
+  ctx.fillStyle = "#ff5733";
+  ctx.fill();
+  
+  // Center dot
+  ctx.beginPath();
+  ctx.arc(cx, cy, hubRadius * 0.4, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffd600";
+  ctx.fill();
+  
+  // Add shine effect
+  ctx.beginPath();
+  ctx.arc(cx - hubRadius * 0.3, cy - hubRadius * 0.3, hubRadius * 0.2, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.fill();
+}
+
+function drawOuterDots(ctx, cx, cy, radius, segmentCount) {
+  const dotCount = Math.min(segmentCount * 2, 36);
+  for (let i = 0; i < dotCount; i++) {
+    const angle = (i / dotCount) * Math.PI * 2;
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + Math.sin(angle) * radius;
+    
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = i % 2 === 0 ? "#ffd600" : "#ff5733";
+    ctx.fill();
   }
-  return shuffled;
 }
 
-// ===== EXPORT FOR MODULE USE =====
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { FortuneWheel, WheelPresets, createRandomSegments, createWeightedSegments, shuffleSegments };
+// =============================================
+// HERO WHEEL ANIMATION
+// =============================================
+let heroSpinAngle = 0;
+let heroSpinAnimation = null;
+
+function updateHeroWheel() {
+  if (!wheelApp.heroCtx || !wheelApp.heroCanvas) return;
+  
+  const segments = ["Prize", "Game", "Movie", "Dinner", "Travel", "Music"];
+  const colors = ["#FF595E", "#FFCA3A", "#8AC926", "#1982C4", "#6A4C93", "#FF6D00"];
+  const ctx = wheelApp.heroCtx;
+  const canvas = wheelApp.heroCanvas;
+  const w = canvas.width;
+  const h = canvas.height;
+  const cx = w / 2;
+  const cy = h / 2;
+  const radius = w * 0.42;
+  const segmentAngle = (Math.PI * 2) / segments.length;
+  
+  ctx.clearRect(0, 0, w, h);
+  
+  // Draw background
+  const gradient = ctx.createLinearGradient(0, 0, w, h);
+  gradient.addColorStop(0, "#f8f2ff");
+  gradient.addColorStop(1, "#fff9f0");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, w, h);
+  
+  // Draw segments
+  for (let i = 0; i < segments.length; i++) {
+    const startAngle = i * segmentAngle + heroSpinAngle;
+    const endAngle = (i + 1) * segmentAngle + heroSpinAngle;
+    
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, startAngle, endAngle);
+    ctx.fillStyle = colors[i];
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.6)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    
+    // Draw text
+    const textRadius = radius * 0.65;
+    const textAngle = startAngle + segmentAngle / 2;
+    const x = cx + Math.cos(textAngle) * textRadius;
+    const y = cy + Math.sin(textAngle) * textRadius;
+    
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(textAngle);
+    ctx.font = "bold 11px Nunito";
+    ctx.fillStyle = "#fff";
+    ctx.shadowBlur = 1;
+    ctx.shadowColor = "rgba(0,0,0,0.3)";
+    ctx.fillText(segments[i], 0, 0);
+    ctx.restore();
+  }
+  
+  // Draw center hub
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 0.15, 0, Math.PI * 2);
+  ctx.fillStyle = "#2d2040";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 0.08, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffd600";
+  ctx.fill();
 }
 
-// ===== MAKE AVAILABLE GLOBALLY =====
-if (typeof window !== 'undefined') {
-  window.FortuneWheel = FortuneWheel;
-  window.WheelPresets = WheelPresets;
-  window.createRandomSegments = createRandomSegments;
-  window.createWeightedSegments = createWeightedSegments;
-  window.shuffleSegments = shuffleSegments;
+function animateHeroWheel() {
+  heroSpinAngle += 0.02;
+  updateHeroWheel();
+  heroSpinAnimation = requestAnimationFrame(animateHeroWheel);
+}
+
+function startHeroAnimation() {
+  if (heroSpinAnimation) cancelAnimationFrame(heroSpinAnimation);
+  heroSpinAnimation = requestAnimationFrame(animateHeroWheel);
+}
+
+function stopHeroAnimation() {
+  if (heroSpinAnimation) {
+    cancelAnimationFrame(heroSpinAnimation);
+    heroSpinAnimation = null;
+  }
+}
+
+// =============================================
+// ENHANCED SPINNING WITH PHYSICS
+// =============================================
+
+// Advanced spin with easing and physics
+function spinWheelAdvanced() {
+  if (wheelApp.spinning) return;
+  if (wheelApp.segments.length === 0) {
+    showToast("Please add some entries first!");
+    return;
+  }
+  
+  wheelApp.spinning = true;
+  playSound('spin');
+  stopHeroAnimation();
+  
+  // Random number of full rotations (5-12)
+  const fullRotations = 5 + Math.random() * 8;
+  const segmentCount = wheelApp.segments.length;
+  const segmentAngle = (Math.PI * 2) / segmentCount;
+  
+  // Random target segment with some weight (can be biased if needed, but keeping fair)
+  const targetIndex = Math.floor(Math.random() * segmentCount);
+  
+  // Calculate target angle (pointer at top = -PI/2)
+  const pointerAngle = -Math.PI / 2;
+  let targetAngle = pointerAngle - (targetIndex * segmentAngle) - (segmentAngle / 2);
+  targetAngle = ((targetAngle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+  
+  const startAngle = wheelApp.spinAngle % (Math.PI * 2);
+  let delta = targetAngle - startAngle;
+  if (delta < 0) delta += Math.PI * 2;
+  
+  const totalDelta = delta + (Math.PI * 2 * fullRotations);
+  const startTime = performance.now();
+  const duration = 2500; // 2.5 seconds spin
+  
+  // Tick sound intervals for realistic wheel clicking
+  let lastTickIndex = -1;
+  const tickInterval = setInterval(() => {
+    if (!wheelApp.spinning) {
+      clearInterval(tickInterval);
+      return;
+    }
+    if (wheelApp.soundEnabled) {
+      playTickSound();
+    }
+  }, 80);
+  
+  function animateSpin(now) {
+    const elapsed = now - startTime;
+    let t = Math.min(1, elapsed / duration);
+    
+    // Cubic ease out for smooth stop
+    const easeOut = 1 - Math.pow(1 - t, 3);
+    const currentDelta = totalDelta * easeOut;
+    wheelApp.spinAngle = startAngle + currentDelta;
+    wheelApp.spinAngle %= (Math.PI * 2);
+    
+    drawWheel();
+    
+    // Trigger tick visual feedback
+    const currentAngle = wheelApp.spinAngle;
+    const tickThreshold = Math.floor((currentAngle / (Math.PI * 2)) * 100);
+    if (tickThreshold !== lastTickIndex && t < 0.95) {
+      lastTickIndex = tickThreshold;
+      // Optional: add visual flash effect on wheel edge
+    }
+    
+    if (t < 1) {
+      requestAnimationFrame(animateSpin);
+    } else {
+      clearInterval(tickInterval);
+      wheelApp.spinAngle = targetAngle;
+      drawWheel();
+      
+      const winner = wheelApp.segments[targetIndex];
+      showWinner(winner);
+      
+      if (wheelApp.removeWinner && wheelApp.segments.length > 1) {
+        wheelApp.segments.splice(targetIndex, 1);
+        updateColorsForSegments();
+        renderEntriesList();
+      }
+      
+      addToHistory(winner);
+      playSound('cheer');
+      if (wheelApp.confettiEnabled) showConfetti();
+      
+      wheelApp.spinning = false;
+      saveWheelToLocal();
+      startHeroAnimation();
+    }
+  }
+  
+  requestAnimationFrame(animateSpin);
+}
+
+function playTickSound() {
+  if (!wheelApp.soundEnabled) return;
+  try {
+    if (!window.audioContext) {
+      window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    const now = window.audioContext.currentTime;
+    const osc = window.audioContext.createOscillator();
+    const gain = window.audioContext.createGain();
+    osc.connect(gain);
+    gain.connect(window.audioContext.destination);
+    osc.frequency.value = 440 + Math.random() * 200;
+    gain.gain.value = 0.08;
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.08);
+    osc.stop(now + 0.08);
+  } catch(e) { /* silent fail */ }
+}
+
+// =============================================
+// WHEEL RESIZE AND RESPONSIVENESS
+// =============================================
+
+function resizeWheel() {
+  const mainCanvas = document.getElementById('mainWheel');
+  if (!mainCanvas) return;
+  
+  let size;
+  if (window.innerWidth < 768) {
+    size = Math.min(320, window.innerWidth - 60);
+  } else {
+    size = 460;
+  }
+  
+  mainCanvas.width = size;
+  mainCanvas.height = size;
+  drawWheel();
+}
+
+// =============================================
+// WHEEL IMPORT/EXPORT
+// =============================================
+
+function exportWheelData() {
+  const data = {
+    segments: wheelApp.segments,
+    theme: wheelApp.currentTheme,
+    settings: {
+      sound: wheelApp.soundEnabled,
+      confetti: wheelApp.confettiEnabled,
+      removeWinner: wheelApp.removeWinner
+    }
+  };
+  const json = JSON.stringify(data);
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "wheel-data.json";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Wheel data exported!");
+}
+
+function importWheelData(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.segments && Array.isArray(data.segments) && data.segments.length > 0) {
+        wheelApp.segments = data.segments;
+      }
+      if (data.theme && THEMES[data.theme]) {
+        setTheme(data.theme);
+      }
+      if (data.settings) {
+        if (typeof data.settings.sound === 'boolean') wheelApp.soundEnabled = data.settings.sound;
+        if (typeof data.settings.confetti === 'boolean') wheelApp.confettiEnabled = data.settings.confetti;
+        if (typeof data.settings.removeWinner === 'boolean') wheelApp.removeWinner = data.settings.removeWinner;
+        
+        // Sync UI toggles
+        const soundToggle = document.getElementById('soundToggle');
+        const confettiToggle = document.getElementById('confettiToggle');
+        const removeToggle = document.getElementById('removeToggle');
+        if (soundToggle) soundToggle.checked = wheelApp.soundEnabled;
+        if (confettiToggle) confettiToggle.checked = wheelApp.confettiEnabled;
+        if (removeToggle) removeToggle.checked = wheelApp.removeWinner;
+      }
+      updateColorsForSegments();
+      renderEntriesList();
+      drawWheel();
+      saveWheelToLocal();
+      showToast("Wheel imported successfully!");
+    } catch(err) {
+      showToast("Invalid file format");
+    }
+  };
+  reader.readAsText(file);
+}
+
+// =============================================
+// KEYBOARD SHORTCUTS
+// =============================================
+
+function initWheelShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    // Space or Enter to spin
+    if (e.code === 'Space' || e.code === 'Enter') {
+      const activeElement = document.activeElement;
+      // Don't spin if typing in input
+      if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+        return;
+      }
+      e.preventDefault();
+      if (!wheelApp.spinning) {
+        spinWheelAdvanced();
+      }
+    }
+    // 'R' key to reset/clear entries
+    if (e.code === 'KeyR' && e.ctrlKey) {
+      e.preventDefault();
+      if (confirm("Reset all entries?")) {
+        wheelApp.segments = ["Spin Me!"];
+        updateColorsForSegments();
+        renderEntriesList();
+        drawWheel();
+        saveWheelToLocal();
+        showToast("Wheel reset");
+      }
+    }
+  });
+}
+
+// =============================================
+// EXPORT PUBLIC METHODS
+// =============================================
+
+// Override the global spin function with advanced version
+window.spinWheel = spinWheelAdvanced;
+
+// Initialize wheel-specific features
+function initWheel() {
+  resizeWheel();
+  startHeroAnimation();
+  initWheelShortcuts();
+  
+  // Add resize listener
+  window.addEventListener('resize', () => {
+    resizeWheel();
+  });
+}
+
+// Call this when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initWheel);
+} else {
+  initWheel();
 }
