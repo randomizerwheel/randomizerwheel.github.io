@@ -307,7 +307,8 @@ function spinWheelAdvanced() {
   
   wheelApp.spinning = true;
   playSound('spin');
-  stopHeroAnimation();
+  // Don't stop hero animation, just let it continue
+// stopHeroAnimation();  // COMMENT THIS OUT OR DELETE IT
   
   // Random number of full rotations (5-12)
   const fullRotations = 5 + Math.random() * 8;
@@ -384,7 +385,10 @@ function spinWheelAdvanced() {
       
       wheelApp.spinning = false;
       saveWheelToLocal();
-      startHeroAnimation();
+      // Ensure hero animation is still running
+if (!heroSpinAnimation) {
+  startHeroAnimation();
+}
     }
   }
   
