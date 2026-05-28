@@ -11,7 +11,7 @@
             <div class="footer-brand">
               <a href="/" class="footer-logo" style="text-decoration: none;">
                 <span style="font-size: 1.8rem;">🎡</span>
-                <span style="font-weight: 800;">Randomizer<span style="color:#ffd600;">Wheel</span></span>
+                <span style="font-weight: 800;">Spin The<span style="color:#ffd600;">Wheel</span></span>
               </a>
               <p>The ultimate free spin the wheel random picker for giveaways, classrooms, games, and everyday decisions.</p>
               <div style="margin-top: 20px; display: flex; gap: 12px;">
