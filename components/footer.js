@@ -49,7 +49,7 @@
               <a href="contact" class="footer-link">Contact</a>
               <a href="privacy" class="footer-link">Privacy Policy</a>
               <a href="terms" class="footer-link">Terms of Use</a>
-              <a href="cookies" class="footer-link">Cookies Policy</a>
+              <a href="cookie" class="footer-link">Cookies Policy</a>
             </div>
           </div>
           
