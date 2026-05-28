@@ -601,25 +601,65 @@ input:checked + .toggle::after { left: 21px; }
   .wheel-type-tabs { flex-direction: column; }
   .tab-btn { text-align: center; }
 }
-/* Mobile: Show wheel first, then controls */
+/* Mobile: Wheel on top - FIXED VERSION */
 @media (max-width: 768px) {
   .app-layout {
-    display: flex;
-    flex-direction: column;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 24px;
   }
   
-  /* Move wheel to the top */
+  /* Center the wheel */
   .wheel-center {
-    order: -1;
-    margin-bottom: 24px;
+    order: 0 !important;
+    margin-bottom: 20px;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
   }
   
-  /* Controls and right panel come after */
+  /* Make wheel canvas responsive and centered */
+  .wheel-wrapper {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+  
+  #mainWheel {
+    display: block !important;
+    margin: 0 auto !important;
+    width: 280px !important;
+    height: 280px !important;
+  }
+  
+  /* Controls - full width */
   .app-controls {
-    order: 0;
+    order: 1 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   
+  /* Right panel - full width */
   .app-right {
-    order: 1;
+    order: 2 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Fix entries list width */
+  .entries-list {
+    width: 100%;
+  }
+  
+  .entry-row {
+    width: 100%;
+  }
+  
+  .entry-input {
+    width: 100%;
+    min-width: 0;
   }
 }
