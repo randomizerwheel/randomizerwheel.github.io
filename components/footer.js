@@ -54,7 +54,7 @@
           </div>
           
           <div class="footer-bottom">
-            <p>&copy; ${currentYear} RandomizerWheel.com | Free Spin The Wheel Random Picker</p>
+            <p>&copy; ${currentYear} RandomizerWheel.github.io | Free Spin The Wheel Random Picker</p>
             <div style="display: flex; gap: 20px;">
               <span style="cursor: pointer;" id="scrollToTopBtn" class="footer-link">⬆️ Back to Top</span>
               <span style="cursor: pointer;" id="feedbackBtn" class="footer-link">💬 Feedback</span>
