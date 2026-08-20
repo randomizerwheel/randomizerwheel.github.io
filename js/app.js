@@ -683,17 +683,25 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   // =============================================
-// FAQ ACCORDION FIX
+// FAQ ACCORDION FIX - VERSION 2
 // =============================================
 function initFaqAccordion() {
   const faqButtons = document.querySelectorAll('.faq-q');
   
+  // If no FAQ buttons found, wait and retry
+  if (faqButtons.length === 0) {
+    setTimeout(initFaqAccordion, 100);
+    return;
+  }
+  
   faqButtons.forEach(button => {
     // Remove any existing listeners to avoid duplicates
-    button.removeEventListener('click', button.faqHandler);
+    button.removeEventListener('click', button._faqHandler);
     
     // Create handler function
-    button.faqHandler = function() {
+    button._faqHandler = function(e) {
+      e.preventDefault();
+      
       // Toggle active class on button
       this.classList.toggle('active');
       
@@ -705,15 +713,16 @@ function initFaqAccordion() {
     };
     
     // Add click listener
-    button.addEventListener('click', button.faqHandler);
+    button.addEventListener('click', button._faqHandler);
   });
 }
 
-// Initialize FAQ when DOM is ready
+// Initialize FAQ - wait for DOM to be ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initFaqAccordion);
 } else {
-  initFaqAccordion();
+  // DOM already loaded, initialize with small delay
+  setTimeout(initFaqAccordion, 50);
 }
   
   // Resize handler
